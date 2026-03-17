@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { getKnownWords } from '../data/wordProgress.js';
 import { getDueCount, getSRSEntry } from '../data/srs.js';
 import { WORDS } from '../data/vocabulary.js';
+import { speakAzerbaijani } from '../utils/tts.js';
 import './VocabScreen.css';
 
 const TOPIC_LABELS = {
@@ -123,6 +124,11 @@ export default function VocabScreen({ onStartReview }) {
             const isDue = srs && srs.nextReview <= Date.now();
             return (
               <div key={i} className={`vocab-word${isDue ? ' vocab-word--due' : ''}`}>
+                <button
+                  className="vocab-word__speak"
+                  onClick={() => speakAzerbaijani(word.az)}
+                  aria-label="Прослушать"
+                >🔊</button>
                 <div className="vocab-word__left">
                   <div className="vocab-word__az">{word.az}</div>
                   {word.transcription && (

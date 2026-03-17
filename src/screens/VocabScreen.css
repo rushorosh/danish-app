@@ -186,6 +186,22 @@
   background: #FFF8EE;
 }
 
+.vocab-word__speak {
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 4px 6px 4px 0;
+  cursor: pointer;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.12s;
+}
+
+.vocab-word__speak:active {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
 .vocab-word__left {
   flex: 1;
   min-width: 0;
