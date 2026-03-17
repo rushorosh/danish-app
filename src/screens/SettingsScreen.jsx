@@ -140,7 +140,11 @@ export default function SettingsScreen({ telegramId, onSettingsChange }) {
           <label className="settings-field__label">{t('email')}</label>
           <input className="settings-field__input" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" type="email" />
         </div>
-        <button className={`settings-save-btn${savedMsg ? ' settings-save-btn--saved' : ''}`} onClick={handleSave}>
+        <button
+          className={`settings-save-btn${savedMsg ? ' settings-save-btn--saved' : ''}`}
+          onClick={handleSave}
+          disabled={!phone.trim()}
+        >
           {savedMsg ? t('saved') : t('save')}
         </button>
       </div>
