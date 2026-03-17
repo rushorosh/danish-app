@@ -1,19 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { generateLessons } from '../data/course.js';
+import { speakAzerbaijani } from '../utils/tts.js';
 import './LessonScreen.css';
 
 const TOTAL_LIVES = 5;
 
 function playAz(text) {
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=az&client=tw-ob&ttsspeed=0.8`;
-  const audio = new Audio(url);
-  audio.play().catch(() => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'tr-TR';
-    u.rate = 0.8;
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(u);
-  });
+  speakAzerbaijani(text, 0.85);
 }
 
 export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete, onClose }) {

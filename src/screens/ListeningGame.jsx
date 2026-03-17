@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { WORDS } from '../data/vocabulary.js';
+import { speakAzerbaijani } from '../utils/tts.js';
 import './ListeningGame.css';
 
 const TOTAL = 8;
@@ -18,16 +19,7 @@ function buildOptions(correct, allWords) {
 }
 
 function playAz(text) {
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=az&client=tw-ob&ttsspeed=0.7`;
-  const audio = new Audio(url);
-  audio.play().catch(() => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'tr-TR';
-    u.rate = 0.75;
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(u);
-  });
-  return audio;
+  speakAzerbaijani(text, 0.8);
 }
 
 export default function ListeningGame({ onBack, onScoreUpdate }) {
@@ -56,11 +48,8 @@ export default function ListeningGame({ onBack, onScoreUpdate }) {
   const handlePlay = useCallback(() => {
     if (playing) return;
     setPlaying(true);
-    const audio = playAz(currentWord.az);
-    const stop = () => setPlaying(false);
-    audio.onended = stop;
-    audio.onerror = stop;
-    setTimeout(stop, 4000); // safety fallback
+    playAz(currentWord.az);
+    setTimeout(() => setPlaying(false), 3500);
   }, [currentWord, playing]);
 
   const handleSelect = useCallback((opt) => {
