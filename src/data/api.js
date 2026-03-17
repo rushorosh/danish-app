@@ -196,6 +196,16 @@ export async function fetchLeaderboardPeriod(period) {
 
 // ─── Profile ──────────────────────────────────────────
 
+export async function fetchUserPhone(telegramId) {
+  if (!supabase || !telegramId) return null;
+  const { data } = await supabase
+    .from('users')
+    .select('phone')
+    .eq('telegram_id', telegramId)
+    .single();
+  return data?.phone || null;
+}
+
 export async function updateUserProfile(telegramId, { phone, email, displayName }) {
   if (!supabase || !telegramId) return;
   const update = { updated_at: new Date().toISOString() };

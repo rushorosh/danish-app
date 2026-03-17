@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSettings, saveSettings } from '../data/settings.js';
 import { useT } from '../data/LanguageContext.jsx';
-import { getReferralCount, updateUserProfile } from '../data/api.js';
+import { getReferralCount, updateUserProfile, fetchUserPhone } from '../data/api.js';
 import './SettingsScreen.css';
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME || '';
@@ -53,9 +53,16 @@ export default function SettingsScreen({ telegramId, onSettingsChange }) {
       if (name) setDisplayName(name);
     }
 
-    // TG 7.0+ — show native contact dialog (phone goes to bot, not to mini app)
+    // TG 7.0+ — native contact dialog; bot receives phone and saves to Supabase
     if (typeof tg.requestContact === 'function') {
-      tg.requestContact(() => {});
+      tg.requestContact(async (sent) => {
+        if (sent && telegramId) {
+          // Wait for bot to save phone to Supabase, then read it
+          await new Promise(r => setTimeout(r, 2500));
+          const savedPhone = await fetchUserPhone(telegramId);
+          if (savedPhone) setPhone(savedPhone);
+        }
+      });
     }
   };
 
@@ -128,7 +135,6 @@ export default function SettingsScreen({ telegramId, onSettingsChange }) {
         <div className="settings-field">
           <label className="settings-field__label">{t('phone')}</label>
           <input className="settings-field__input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+7..." type="tel" />
-          <div className="settings-field__hint">Введите номер вручную</div>
         </div>
         <div className="settings-field">
           <label className="settings-field__label">{t('email')}</label>
