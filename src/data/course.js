@@ -143,9 +143,9 @@ const SENTENCE_PATTERN = [
  * pool: array of word objects { az, ru, transcription, ... }
  * allWords: full word list for distractors
  */
-export function buildLessons(pool, allWords, sectionId, withSentences = false) {
+export function buildLessons(pool, allWords, sectionId, withSentences = false, nodeIdx = 0) {
   const pattern = withSentences ? SENTENCE_PATTERN : LESSON_PATTERN;
-  const offset = ((sectionId - 1) * 5) % Math.max(pool.length, 1);
+  const offset = ((sectionId - 1) * 5 + nodeIdx * 3) % Math.max(pool.length, 1);
   const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
   const words = rotated.slice(0, 5);
   while (words.length < 3) words.push(...pool.slice(0, 3));
@@ -163,7 +163,7 @@ export function buildLessons(pool, allWords, sectionId, withSentences = false) {
 /**
  * Static lesson generation (used as fallback when DB unavailable).
  */
-export function generateLessons(moduleId, sectionId) {
+export function generateLessons(moduleId, sectionId, nodeIdx = 0) {
   const topic = TOPIC_MAP[String(moduleId)] || 'greetings';
   const topicWords = WORDS.filter(w => w.topic === topic);
 
@@ -177,7 +177,7 @@ export function generateLessons(moduleId, sectionId) {
   const pool = topicWords.filter(w => levels.includes(w.level));
   const source = pool.length >= 3 ? pool : topicWords;
   const withSentences = sectionId >= 4;
-  return buildLessons(source, WORDS, sectionId, withSentences);
+  return buildLessons(source, WORDS, sectionId, withSentences, nodeIdx);
 }
 
 /**
@@ -186,7 +186,7 @@ export function generateLessons(moduleId, sectionId) {
  * dbSentences: sentences fetched from Supabase sentences table (optional)
  * allDbWords: full vocabulary for distractors
  */
-export function generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences = [], allDbWords = []) {
+export function generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences = [], allDbWords = [], nodeIdx = 0) {
   let levels;
   if (sectionId === 1)      levels = [1];
   else if (sectionId === 2) levels = [1, 2];
@@ -199,7 +199,7 @@ export function generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences 
   const distractorPool = allDbWords.length > 10 ? allDbWords : [...WORDS, ...allDbWords];
   const withSentences = sectionId >= 4 && dbSentences.length > 0;
 
-  const offset = ((sectionId - 1) * 5) % Math.max(source.length, 1);
+  const offset = ((sectionId - 1) * 5 + nodeIdx * 3) % Math.max(source.length, 1);
   const rotated = [...source.slice(offset), ...source.slice(0, offset)];
   const words = rotated.slice(0, 5);
   while (words.length < 3) words.push(...source.slice(0, 3));

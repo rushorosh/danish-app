@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { generateLessons, generateLessonsFromDB, TOPIC_MAP, NODE_INDICES } from '../data/course.js';
+import { generateLessons, generateLessonsFromDB, TOPIC_MAP } from '../data/course.js';
 import { speakAzerbaijani } from '../utils/tts.js';
 import { recordActivity } from '../data/streak.js';
 import { addKnownWords } from '../data/wordProgress.js';
@@ -11,16 +11,9 @@ const TOTAL_LIVES = 5;
 
 function playAz(text) { speakAzerbaijani(text, 0.85); }
 
-// nodeIdx: 0-based index into NODE_INDICES (which lessons to show)
+// nodeIdx: 0-based node index, used as word-rotation offset so each node shows different words
 export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, onComplete, onClose }) {
-  const [allLessons, setAllLessons] = useState(() => generateLessons(moduleId, sectionId));
-
-  // Slice to just the lessons for this node
-  const lessons = useMemo(() => {
-    if (nodeIdx == null) return allLessons;
-    const indices = NODE_INDICES[nodeIdx] || [];
-    return allLessons.filter((_, i) => indices.includes(i));
-  }, [allLessons, nodeIdx]);
+  const [lessons, setLessons] = useState(() => generateLessons(moduleId, sectionId, nodeIdx ?? 0));
   const [currentIdx, setCurrentIdx] = useState(0);
 
   // Load from Supabase DB if available, replace static lessons
@@ -32,7 +25,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
       fetchSentencesByTopic(topic, sectionId >= 4 ? 5 : 3),
     ]).then(([dbWords, dbSentences]) => {
       if (dbWords && dbWords.length >= 3) {
-        setAllLessons(generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences, dbWords));
+        setLessons(generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences, dbWords, nodeIdx ?? 0));
       }
     }).catch(() => {});
   }, [moduleId, sectionId]); // eslint-disable-line react-hooks/exhaustive-deps
