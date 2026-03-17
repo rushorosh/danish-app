@@ -168,6 +168,17 @@
   transform: scale(0.9);
 }
 
+.translate-screen__mic-unsupported {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0.35;
+  cursor: default;
+}
+
 .translate-screen__clear-btn {
   width: 28px;
   height: 28px;

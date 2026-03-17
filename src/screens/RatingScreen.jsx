@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { fetchLeaderboard, fetchLeaderboardPeriod } from '../data/api.js';
+import { fetchLeaderboard, fetchLeaderboardPeriod, invalidateRatingsCache } from '../data/api.js';
 import { useT } from '../data/LanguageContext.jsx';
 import './RatingScreen.css';
 
@@ -39,10 +39,12 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const load = useCallback(async (p) => {
+  const load = useCallback(async (p, forceRefresh = false) => {
     setLoading(true);
     setBoard(null);
-    const data = p === 'all' ? await fetchLeaderboard() : await fetchLeaderboardPeriod(p);
+    const data = p === 'all'
+      ? await fetchLeaderboard(forceRefresh)
+      : await fetchLeaderboardPeriod(p, forceRefresh);
     setBoard(mapUsers(data));
     setLoading(false);
   }, [mapUsers]);
@@ -77,7 +79,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
             <div className="rating-screen__header-sub">{t('subtitle')}</div>
           </div>
         </div>
-        <button className="rating-screen__refresh-btn" onClick={() => load(period)} disabled={loading}>
+        <button className="rating-screen__refresh-btn" onClick={() => { invalidateRatingsCache(); load(period, true); }} disabled={loading}>
           <span>{loading ? '⏳' : '🔄'}</span>
           <span>{loading ? '...' : t('refresh')}</span>
         </button>

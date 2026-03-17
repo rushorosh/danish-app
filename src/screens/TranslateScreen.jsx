@@ -192,7 +192,7 @@ export default function TranslateScreen() {
             maxLength={500}
           />
           <div className="translate-screen__input-actions">
-            {hasSpeechRecognition && (
+            {hasSpeechRecognition && fromCode !== 'az' && (
               <button
                 className={`translate-screen__mic-btn${listening ? ' translate-screen__mic-btn--active' : ''}`}
                 onClick={startVoice}
@@ -200,6 +200,9 @@ export default function TranslateScreen() {
               >
                 {listening ? '⏹' : '🎙️'}
               </button>
+            )}
+            {fromCode === 'az' && (
+              <span className="translate-screen__mic-unsupported" title="Диктовка на азербайджанском не поддерживается браузером">🎙️✕</span>
             )}
             {inputText.length > 0 && (
               <button className="translate-screen__clear-btn" onClick={handleClear}>✕</button>

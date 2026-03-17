@@ -54,6 +54,7 @@ export async function updateScore(telegramId, score) {
     .update({ score, updated_at: new Date().toISOString() })
     .eq('telegram_id', telegramId);
   if (error) console.warn('[api] updateScore error:', error.message);
+  else invalidateRatingsCache();
 }
 
 // ─── Progress ────────────────────────────────────────
@@ -113,12 +114,20 @@ export async function addScoreEvent(telegramId, points) {
 
 // ─── Leaderboard ─────────────────────────────────────
 
+export function invalidateRatingsCache() {
+  delete _cache['all'];
+  delete _cache['day'];
+  delete _cache['week'];
+}
+
 /**
  * Fetch top-50 users by score (all time).
  */
-export async function fetchLeaderboard() {
-  const cached = cacheGet('all');
-  if (cached) return cached;
+export async function fetchLeaderboard(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = cacheGet('all');
+    if (cached) return cached;
+  }
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('users')
@@ -138,9 +147,11 @@ export async function fetchLeaderboard() {
  * Fetch leaderboard for a time period.
  * period: 'week' | 'day'
  */
-export async function fetchLeaderboardPeriod(period) {
-  const cached = cacheGet(period);
-  if (cached) return cached;
+export async function fetchLeaderboardPeriod(period, forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = cacheGet(period);
+    if (cached) return cached;
+  }
   if (!supabase) return null;
   const now = new Date();
   let since;
