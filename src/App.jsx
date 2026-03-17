@@ -67,18 +67,17 @@ export default function App() {
           firstName: u.first_name,
           lastName: u.last_name,
         }).then(dbUser => {
-          if (dbUser && dbUser.score > parseInt(localStorage.getItem('az_score') || '0')) {
-            setUserScore(dbUser.score);
-            localStorage.setItem('az_score', String(dbUser.score));
+          if (dbUser) {
+            const dbScore = dbUser.score ?? 0;
+            setUserScore(dbScore);
+            localStorage.setItem('az_score', String(dbScore));
           }
         });
 
         loadProgress(u.id).then(dbProgress => {
-          if (dbProgress) {
-            const local = JSON.parse(localStorage.getItem('az_progress') || '{}');
-            const merged = { ...local, ...dbProgress };
-            localStorage.setItem('az_progress', JSON.stringify(merged));
-            setProgressData(merged);
+          if (dbProgress !== null) {
+            localStorage.setItem('az_progress', JSON.stringify(dbProgress));
+            setProgressData(dbProgress);
             setProgressVersion(v => v + 1);
           }
         });
