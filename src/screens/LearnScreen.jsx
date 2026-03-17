@@ -4,31 +4,21 @@ import { getProgress, isSectionComplete } from '../data/progress.js';
 import { useT } from '../data/LanguageContext.jsx';
 import './LearnScreen.css';
 
-// Zigzag positions for 10 sections per module
-const ZIGZAG = [
-  'center', 'right', 'center', 'left',
-  'center', 'right', 'center', 'left',
-  'center', 'center',
-];
+// Zigzag positions for 5 sections per module
+const ZIGZAG = ['center', 'right', 'center', 'left', 'center'];
 
 // Horizontal % for each position (used for connector dots and character placement)
 const POS_PCT = { left: 18, center: 50, right: 82 };
 
-// Animated characters: one per section per module
-// Each entry: { figure, action, anim }
+// Animated characters: 5 per module (one per section)
 const CHARS = [
   // Module 1 — Greetings
   [
-    { figure: '🧔🏻', action: '👋', anim: 'wave' },
-    { figure: '👩🏻', action: '🙏', anim: 'bow' },
-    { figure: '🧑🏻', action: '🤝', anim: 'bob' },
-    { figure: '👩🏻‍🦱', action: '👋', anim: 'wave' },
-    { figure: '👨🏻', action: '☀️', anim: 'bounce' },
-    { figure: '👩🏻', action: '🤔', anim: 'think' },
-    { figure: '🧔🏻', action: '💬', anim: 'talk' },
-    { figure: '👩🏻‍🦳', action: '😊', anim: 'bounce' },
-    { figure: '👦🏻', action: '📚', anim: 'bob' },
-    { figure: '👧🏻', action: '⭐', anim: 'bounce' },
+    { figure: '🧔🏻', action: '🔤', anim: 'bob' },
+    { figure: '👩🏻', action: '👋', anim: 'wave' },
+    { figure: '🧑🏻', action: '🙏', anim: 'bow' },
+    { figure: '👩🏻‍🦱', action: '🤝', anim: 'bob' },
+    { figure: '👨🏻', action: '💬', anim: 'talk' },
   ],
   // Module 2 — Numbers & Colors
   [
@@ -36,51 +26,55 @@ const CHARS = [
     { figure: '👩🏻', action: '🔢', anim: 'bounce' },
     { figure: '👨🏻‍🎨', action: '🎨', anim: 'bob' },
     { figure: '👩🏻‍🎨', action: '🌈', anim: 'bounce' },
-    { figure: '🧔🏻', action: '🤔', anim: 'think' },
-    { figure: '👩🏻', action: '✏️', anim: 'bob' },
-    { figure: '👨🏻', action: '📏', anim: 'bob' },
-    { figure: '👩🏻‍🦱', action: '📊', anim: 'bounce' },
-    { figure: '👦🏻', action: '📚', anim: 'bob' },
-    { figure: '👧🏻', action: '⭐', anim: 'bounce' },
+    { figure: '🧔🏻', action: '✨', anim: 'bounce' },
   ],
-  // Module 3 — Food & Drinks
+  // Module 3 — Daily Life
   [
-    { figure: '🧔🏻', action: '🍵', anim: 'drink' },
-    { figure: '👩🏻', action: '🍑', anim: 'eat' },
-    { figure: '👨🏻', action: '🍅', anim: 'eat' },
-    { figure: '👩🏻‍🍳', action: '🥘', anim: 'cook' },
-    { figure: '🧑🏻', action: '😋', anim: 'eat' },
-    { figure: '👩🏻', action: '☕', anim: 'drink' },
-    { figure: '🧔🏻', action: '📋', anim: 'bob' },
-    { figure: '👩🏻‍🦱', action: '🛒', anim: 'walk' },
-    { figure: '👦🏻', action: '📚', anim: 'bob' },
-    { figure: '👧🏻', action: '⭐', anim: 'bounce' },
+    { figure: '🧑🏻', action: '📅', anim: 'bob' },
+    { figure: '👩🏻', action: '⏰', anim: 'bob' },
+    { figure: '👨🏻', action: '🌸', anim: 'bounce' },
+    { figure: '👩🏻‍🦱', action: '🌅', anim: 'bounce' },
+    { figure: '🧔🏻', action: '📖', anim: 'bob' },
   ],
   // Module 4 — Family & Home
   [
-    { figure: '👨🏻', action: '🤗', anim: 'bounce' },
-    { figure: '👶🏻', action: '😊', anim: 'bounce' },
-    { figure: '👩🏻', action: '👨‍👩‍👧‍👦', anim: 'bob' },
-    { figure: '🧔🏻', action: '🏠', anim: 'bob' },
-    { figure: '👩🏻‍🦱', action: '🌿', anim: 'bob' },
+    { figure: '👨🏻', action: '👨‍👩‍👧', anim: 'bounce' },
+    { figure: '👶🏻', action: '👨‍👩‍👧‍👦', anim: 'bounce' },
+    { figure: '👩🏻‍🦳', action: '🏠', anim: 'bob' },
     { figure: '👧🏻', action: '🐱', anim: 'bounce' },
-    { figure: '👨🏻', action: '🦅', anim: 'bounce' },
-    { figure: '👩🏻‍🦳', action: '💕', anim: 'bounce' },
-    { figure: '👦🏻', action: '📚', anim: 'bob' },
-    { figure: '👧🏻', action: '⭐', anim: 'bounce' },
+    { figure: '👩🏻', action: '💕', anim: 'bounce' },
   ],
-  // Module 5 — City & Verbs
+  // Module 5 — City
   [
     { figure: '🧔🏻', action: '🏙️', anim: 'walk' },
     { figure: '👩🏻', action: '🚌', anim: 'walk' },
-    { figure: '🏃🏻', action: '', anim: 'walk' },
-    { figure: '👩🏻‍🦱', action: '⚡', anim: 'bounce' },
-    { figure: '🧑🏻', action: '🗺️', anim: 'think' },
-    { figure: '👨🏻', action: '⏰', anim: 'bob' },
+    { figure: '🏃🏻', action: '🗺️', anim: 'walk' },
+    { figure: '👩🏻‍🦱', action: '🛒', anim: 'bob' },
+    { figure: '🧑🏻', action: '☕', anim: 'bounce' },
+  ],
+  // Module 6 — Verbs
+  [
+    { figure: '👩🏻‍🏫', action: '⚡', anim: 'bounce' },
+    { figure: '🧔🏻', action: '▶️', anim: 'bob' },
+    { figure: '👨🏻', action: '⏪', anim: 'bob' },
+    { figure: '🚀', action: '', anim: 'bounce' },
+    { figure: '🧑🏻', action: '💭', anim: 'think' },
+  ],
+  // Module 7 — Communication
+  [
+    { figure: '🦉', action: '❓', anim: 'bob' },
+    { figure: '👩🏻‍🦱', action: '💬', anim: 'talk' },
+    { figure: '😊', action: '', anim: 'bounce' },
+    { figure: '🧔🏻', action: '🤝', anim: 'bob' },
+    { figure: '🦋', action: '🎭', anim: 'bounce' },
+  ],
+  // Module 8 — Work & Education
+  [
     { figure: '👩🏻‍💼', action: '💼', anim: 'bob' },
-    { figure: '🧔🏻', action: '🌿', anim: 'bob' },
-    { figure: '👦🏻', action: '📚', anim: 'bob' },
-    { figure: '👧🏻', action: '⭐', anim: 'bounce' },
+    { figure: '🧑🏻‍💻', action: '🏢', anim: 'bob' },
+    { figure: '👨🏻‍🎓', action: '🎓', anim: 'bounce' },
+    { figure: '🏆', action: '📈', anim: 'bounce' },
+    { figure: '🤝', action: '🌍', anim: 'bob' },
   ],
 ];
 
@@ -111,12 +105,17 @@ export default function LearnScreen({ onStartLesson }) {
   const getSectionStatus = (moduleId, sectionId) => {
     if (isSectionComplete(moduleId, sectionId, progress)) return 'completed';
     if (moduleId === 1 && sectionId === 1) return 'active';
-    const prevSec =
-      sectionId > 1
-        ? { mid: moduleId, sid: sectionId - 1 }
-        : { mid: moduleId - 1, sid: 10 };
-    if (prevSec.mid < 1) return 'active';
-    if (isSectionComplete(prevSec.mid, prevSec.sid, progress)) return 'active';
+    let prevMid, prevSid;
+    if (sectionId > 1) {
+      prevMid = moduleId;
+      prevSid = sectionId - 1;
+    } else {
+      const prevMod = COURSE.find(m => m.id === moduleId - 1);
+      if (!prevMod) return 'active';
+      prevMid = prevMod.id;
+      prevSid = prevMod.sections.length;
+    }
+    if (isSectionComplete(prevMid, prevSid, progress)) return 'active';
     return 'locked';
   };
 
@@ -163,6 +162,7 @@ export default function LearnScreen({ onStartLesson }) {
                   style={{ color: mod.color }}
                 >
                   {t('module')} {mod.id} · {mod.title}
+                  {mod.cefr && <span className="learn-module-header__cefr">{mod.cefr}</span>}
                 </div>
                 <div className="learn-module-header__line" />
               </div>

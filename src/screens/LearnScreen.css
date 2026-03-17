@@ -99,6 +99,20 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.learn-module-header__cefr {
+  font-size: 9px;
+  font-weight: 800;
+  background: currentColor;
+  color: #fff !important;
+  border-radius: 6px;
+  padding: 1px 5px;
+  opacity: 0.85;
+  letter-spacing: 0.5px;
 }
 
 /* ── Node rows — zigzag ──────────────────────── */

@@ -33,6 +33,29 @@
   letter-spacing: -0.5px;
 }
 
+.prog-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prog-header__streak {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #FFF4E0;
+  border: 1.5px solid #FFD060;
+  border-radius: 20px;
+  padding: 5px 10px 5px 8px;
+  font-size: 14px;
+}
+
+.prog-header__streak-count {
+  font-size: 13px;
+  font-weight: 800;
+  color: #D97706;
+}
+
 .prog-header__score {
   display: flex;
   align-items: center;
