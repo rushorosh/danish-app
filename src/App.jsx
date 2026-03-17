@@ -11,7 +11,7 @@ import ListeningGame from './screens/ListeningGame';
 import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress } from './data/api.js';
+import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
 import { markSectionComplete, setProgressData } from './data/progress.js';
 import './App.css';
 
@@ -40,6 +40,9 @@ export default function App() {
   );
 
   const scoreDebounce = useRef(null);
+
+  // Preload ratings in background on startup
+  useEffect(() => { preloadRatings(); }, []);
 
   // Telegram WebApp init + Supabase sync + referral detection
   useEffect(() => {

@@ -43,11 +43,26 @@ export default function SettingsScreen({ telegramId, onSettingsChange }) {
   };
 
   const handleFillFromTG = () => {
-    const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
+
+    // TG 7.0+ — native contact request dialog
+    if (typeof tg.requestContact === 'function') {
+      tg.requestContact((ok, contact) => {
+        if (ok && contact) {
+          if (contact.phone_number) setPhone(contact.phone_number);
+          const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ');
+          if (name) setDisplayName(name);
+        }
+      });
+      return;
+    }
+
+    // Fallback: fill from initDataUnsafe (no phone available this way)
+    const u = tg.initDataUnsafe?.user;
     if (u) {
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ');
       if (name) setDisplayName(name);
-      if (u.phone_number) setPhone(u.phone_number);
     }
   };
 

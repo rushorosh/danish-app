@@ -1,9 +1,11 @@
 import React from 'react';
 import { useT } from '../data/LanguageContext.jsx';
+import { getLevelProgress } from '../data/levels.js';
 import './GamesScreen.css';
 
 export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListening }) {
   const t = useT('games');
+  const lp = getLevelProgress(userScore);
   return (
     <div className="games-screen">
       <div className="games-screen__header">
@@ -26,7 +28,7 @@ export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListeni
             <div className="games-screen__card-icon-wrap">
               <span className="games-screen__card-icon">🃏</span>
             </div>
-            <div className="games-screen__card-badge">{t('flashcards_badge')}</div>
+            <div className="games-screen__card-badge">Ур. {lp.level} · {t('flashcards_badge')}</div>
           </div>
           <div className="games-screen__card-body">
             <div className="games-screen__card-title">{t('flashcards')}</div>
@@ -49,7 +51,7 @@ export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListeni
             <div className="games-screen__card-icon-wrap games-screen__card-icon-wrap--pink">
               <span className="games-screen__card-icon">🎧</span>
             </div>
-            <div className="games-screen__card-badge games-screen__card-badge--pink">{t('listening_badge')}</div>
+            <div className="games-screen__card-badge games-screen__card-badge--pink">Ур. {lp.level} · {t('listening_badge')}</div>
           </div>
           <div className="games-screen__card-body">
             <div className="games-screen__card-title">{t('listening')}</div>

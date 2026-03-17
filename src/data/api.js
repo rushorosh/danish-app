@@ -1,5 +1,23 @@
 import { supabase } from '../lib/supabase.js';
 
+// ─── Rating cache ────────────────────────────────────
+const _cache = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function cacheGet(key) {
+  const entry = _cache[key];
+  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
+  return null;
+}
+function cacheSet(key, data) { _cache[key] = { data, ts: Date.now() }; }
+
+/** Call on app start to warm rating cache in background */
+export function preloadRatings() {
+  fetchLeaderboard();
+  fetchLeaderboardPeriod('day');
+  fetchLeaderboardPeriod('week');
+}
+
 // ─── User ───────────────────────────────────────────
 
 /**
@@ -99,6 +117,8 @@ export async function addScoreEvent(telegramId, points) {
  * Fetch top-50 users by score (all time).
  */
 export async function fetchLeaderboard() {
+  const cached = cacheGet('all');
+  if (cached) return cached;
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('users')
@@ -109,7 +129,9 @@ export async function fetchLeaderboard() {
     console.warn('[api] fetchLeaderboard error:', error.message);
     return null;
   }
-  return data || [];
+  const result = data || [];
+  cacheSet('all', result);
+  return result;
 }
 
 /**
@@ -117,6 +139,8 @@ export async function fetchLeaderboard() {
  * period: 'week' | 'day'
  */
 export async function fetchLeaderboardPeriod(period) {
+  const cached = cacheGet(period);
+  if (cached) return cached;
   if (!supabase) return null;
   const now = new Date();
   let since;
@@ -162,10 +186,12 @@ export async function fetchLeaderboardPeriod(period) {
     return fetchLeaderboard();
   }
 
-  return (users || [])
+  const result = (users || [])
     .map(u => ({ ...u, score: totals[String(u.telegram_id)] || 0 }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50);
+  cacheSet(period, result);
+  return result;
 }
 
 // ─── Profile ──────────────────────────────────────────

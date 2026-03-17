@@ -45,34 +45,44 @@
   border-bottom: 1.5px solid var(--border-light);
 }
 
-.translate-screen__lang-label {
+/* Language selectors */
+.translate-screen__lang-select-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
+  gap: 4px;
   flex: 1;
+  min-width: 0;
 }
 
-.translate-screen__lang-label--to {
+.translate-screen__lang-select-wrap--right {
   justify-content: flex-end;
 }
 
-.translate-screen__lang-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.translate-screen__lang-flag {
+  font-size: 20px;
+  line-height: 1;
   flex-shrink: 0;
 }
 
-.translate-screen__lang-dot--from {
-  background: var(--primary);
+.translate-screen__lang-select {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 110px;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-.translate-screen__lang-dot--to {
-  background: var(--accent-green);
-}
+/* Keep old lang-label for backwards compat (not used) */
+.translate-screen__lang-label { display: none; }
+.translate-screen__lang-dot { display: none; }
+.translate-screen__lang-dot--from { display: none; }
+.translate-screen__lang-dot--to { display: none; }
 
 .translate-screen__swap-btn {
   width: 40px;

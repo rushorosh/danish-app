@@ -169,7 +169,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
                 <div className="rating-row__info">
                   <div className="rating-row__name">
                     {user.name}
-                    {user.isMe && <span className="rating-row__you-badge">{t('my_pos').replace(':', '')}</span>}
+                    {user.isMe && <span className="rating-row__you-badge">👤</span>}
                   </div>
                 </div>
                 <div className="rating-row__score">

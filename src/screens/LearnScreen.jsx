@@ -147,8 +147,11 @@ export default function LearnScreen({ onStartLesson }) {
       {/* Module path */}
       <div className="learn-path">
         {COURSE.map((mod, modIdx) => {
-          // Only Module 1 is fully visible; all others are fogged
-          const isFogModule = modIdx >= 1;
+          // Module unlocked if it's the first, or all sections of all previous modules completed
+          const isUnlocked = modIdx === 0 || COURSE.slice(0, modIdx).every(prevMod =>
+            prevMod.sections.every(sec => isSectionComplete(prevMod.id, sec.id, progress))
+          );
+          const isFogModule = !isUnlocked;
 
           return (
             <div key={mod.id} className="learn-module-group">
