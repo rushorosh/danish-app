@@ -17,6 +17,9 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.15s;
+  position: sticky;
+  top: 8px;
+  z-index: 20;
 }
 
 .learn-banner:active {

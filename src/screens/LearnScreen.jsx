@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { COURSE } from '../data/course.js';
 import { getProgress, isSectionComplete } from '../data/progress.js';
 import './LearnScreen.css';
@@ -85,6 +85,7 @@ const CHARS = [
 
 export default function LearnScreen({ onStartLesson }) {
   const [progress] = useState(() => getProgress());
+  const activeRef = useRef(null);
 
   const nextSection = useMemo(() => {
     for (const mod of COURSE) {
@@ -96,6 +97,14 @@ export default function LearnScreen({ onStartLesson }) {
     }
     return null;
   }, [progress]);
+
+  // Scroll to active lesson on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const getSectionStatus = (moduleId, sectionId) => {
     if (isSectionComplete(moduleId, sectionId, progress)) return 'completed';
@@ -166,6 +175,8 @@ export default function LearnScreen({ onStartLesson }) {
                 else if (pos === 'right') charSide = 'left';
                 else charSide = secIdx % 2 === 0 ? 'right' : 'left';
 
+                const isActiveNode = status === 'active';
+
                 return (
                   <React.Fragment key={sec.id}>
                     {/* Node row */}
@@ -175,6 +186,7 @@ export default function LearnScreen({ onStartLesson }) {
                       }`}
                     >
                       <button
+                        ref={isActiveNode ? activeRef : null}
                         className={`learn-node learn-node--${status}`}
                         style={
                           status !== 'locked'

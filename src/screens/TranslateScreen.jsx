@@ -25,15 +25,26 @@ export default function TranslateScreen() {
     const recognition = new SR();
     recognition.lang = fromLang === 'ru' ? 'ru-RU' : 'az-AZ';
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.onstart = () => setListening(true);
     recognition.onend = () => setListening(false);
     recognition.onerror = () => setListening(false);
     recognition.onresult = (e) => {
-      const spoken = e.results[0][0].transcript;
-      setInputText(spoken);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => translate(spoken), 300);
+      let interimText = '';
+      let finalText = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalText += e.results[i][0].transcript;
+        } else {
+          interimText += e.results[i][0].transcript;
+        }
+      }
+      if (interimText) setInputText(interimText);
+      if (finalText) {
+        setInputText(finalText);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => translate(finalText), 300);
+      }
     };
     recognitionRef.current = recognition;
     recognition.start();
@@ -214,9 +225,6 @@ export default function TranslateScreen() {
         </div>
       </div>
 
-      <div className="translate-screen__powered">
-        Powered by MyMemory Translation API
-      </div>
     </div>
   );
 }
