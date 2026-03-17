@@ -1,3 +1,30 @@
+.rating-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-gray);
+  border-radius: 14px;
+  padding: 4px;
+}
+
+.rating-tab {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.rating-tab--active {
+  background: #fff;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(108, 58, 237, 0.12);
+}
+
 .rating-loading {
   text-align: center;
   padding: 40px;

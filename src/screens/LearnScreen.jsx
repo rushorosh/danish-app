@@ -204,19 +204,6 @@ export default function LearnScreen({ onScoreUpdate }) {
                         isFogModule ? ' learn-node-row--fog' : ''
                       }`}
                     >
-                      {/* Animated character beside the node */}
-                      {charData && !isFogModule && (
-                        <div
-                          className={`learn-char learn-char--${charSide} learn-char--${charData.anim}`}
-                          aria-hidden="true"
-                        >
-                          <span className="learn-char__figure">{charData.figure}</span>
-                          {charData.action && (
-                            <span className="learn-char__action">{charData.action}</span>
-                          )}
-                        </div>
-                      )}
-
                       <button
                         className={`learn-node learn-node--${status}`}
                         style={

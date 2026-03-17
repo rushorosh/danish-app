@@ -78,11 +78,25 @@ export async function saveProgress(telegramId, moduleId, sectionId) {
   if (error) console.warn('[api] saveProgress error:', error.message);
 }
 
+// ─── Score events ─────────────────────────────────────
+
+/**
+ * Log a score event (called every time user earns points).
+ */
+export async function addScoreEvent(telegramId, points) {
+  if (!supabase || !telegramId || !points) return;
+  const { error } = await supabase.from('score_events').insert({
+    telegram_id: telegramId,
+    points,
+    created_at: new Date().toISOString(),
+  });
+  if (error) console.warn('[api] addScoreEvent error:', error.message);
+}
+
 // ─── Leaderboard ─────────────────────────────────────
 
 /**
- * Fetch top-50 users by score.
- * Returns array of { telegram_id, first_name, username, score }.
+ * Fetch top-50 users by score (all time).
  */
 export async function fetchLeaderboard() {
   if (!supabase) return null;
@@ -96,4 +110,59 @@ export async function fetchLeaderboard() {
     return null;
   }
   return data || [];
+}
+
+/**
+ * Fetch leaderboard for a time period.
+ * period: 'week' | 'day'
+ */
+export async function fetchLeaderboardPeriod(period) {
+  if (!supabase) return null;
+  const now = new Date();
+  let since;
+  if (period === 'day') {
+    since = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  } else if (period === 'week') {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 7);
+    since = d.toISOString();
+  } else {
+    return fetchLeaderboard();
+  }
+
+  // Fetch score events for the period
+  const { data: events, error } = await supabase
+    .from('score_events')
+    .select('telegram_id, points')
+    .gte('created_at', since);
+
+  if (error) {
+    console.warn('[api] fetchLeaderboardPeriod error:', error.message);
+    return null;
+  }
+
+  // Aggregate points by user
+  const totals = {};
+  for (const e of events || []) {
+    totals[e.telegram_id] = (totals[e.telegram_id] || 0) + e.points;
+  }
+
+  if (Object.keys(totals).length === 0) return [];
+
+  // Fetch user info for aggregated IDs
+  const ids = Object.keys(totals);
+  const { data: users, error: err2 } = await supabase
+    .from('users')
+    .select('telegram_id, first_name, last_name, username')
+    .in('telegram_id', ids);
+
+  if (err2) {
+    console.warn('[api] fetchLeaderboardPeriod users error:', err2.message);
+    return null;
+  }
+
+  return (users || [])
+    .map(u => ({ ...u, score: totals[u.telegram_id] || 0 }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50);
 }

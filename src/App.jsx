@@ -7,7 +7,7 @@ import GamesScreen from './screens/GamesScreen';
 import FlashcardsGame from './screens/FlashcardsGame';
 import ListeningGame from './screens/ListeningGame';
 import RatingScreen from './screens/RatingScreen';
-import { upsertUser, updateScore, loadProgress } from './data/api.js';
+import { upsertUser, updateScore, addScoreEvent, loadProgress } from './data/api.js';
 import { setProgressData } from './data/progress.js';
 import './App.css';
 
@@ -90,10 +90,11 @@ export default function App() {
       const newScore = prev + points;
       localStorage.setItem('az_score', String(newScore));
 
-      // Debounced DB update
+      // Log score event + debounced total update
+      const tid = localStorage.getItem('az_tg_id');
+      if (tid) addScoreEvent(tid, points);
       if (scoreDebounce.current) clearTimeout(scoreDebounce.current);
       scoreDebounce.current = setTimeout(() => {
-        const tid = localStorage.getItem('az_tg_id');
         if (tid) updateScore(tid, newScore);
       }, 2000);
 

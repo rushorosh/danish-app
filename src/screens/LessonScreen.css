@@ -1,10 +1,13 @@
 .lesson-screen {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
   background: var(--primary-bg);
   display: flex;
   flex-direction: column;
   color: var(--text-primary);
   animation: fadeIn 0.25s ease;
+  overflow: hidden;
 }
 
 /* ── Top bar ─────────────────────────────────── */
@@ -172,6 +175,8 @@
 .lesson-answer-area {
   flex: 1;
   padding: 0 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Choice options */
@@ -286,8 +291,11 @@
 
 /* ── Bottom area ─────────────────────────────── */
 .lesson-bottom {
-  padding: 12px 16px 32px;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 12px));
   flex-shrink: 0;
+  background: var(--primary-bg);
+  border-top: 1.5px solid var(--border-light);
 }
 
 .lesson-check-btn {

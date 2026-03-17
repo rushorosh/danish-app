@@ -125,10 +125,42 @@
   color: #B0B7C3;
 }
 
-.translate-screen__clear-btn {
+.translate-screen__input-actions {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.translate-screen__mic-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--primary-surface);
+  border: 1.5px solid var(--primary-light);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.translate-screen__mic-btn--active {
+  background: #FFE4E4;
+  border-color: var(--accent-red);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.translate-screen__mic-btn:active {
+  transform: scale(0.9);
+}
+
+.translate-screen__clear-btn {
+  width: 28px;
+  height: 28px;
   width: 22px;
   height: 22px;
   border-radius: 50%;

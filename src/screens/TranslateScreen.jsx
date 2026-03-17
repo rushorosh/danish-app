@@ -7,9 +7,38 @@ export default function TranslateScreen() {
   const [direction, setDirection] = useState('ru-az'); // 'ru-az' | 'az-ru'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [listening, setListening] = useState(false);
   const debounceRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const fromLang = direction === 'ru-az' ? 'ru' : 'az';
+  const hasSpeechRecognition = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const startVoice = useCallback(() => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    if (!hasSpeechRecognition) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SR();
+    recognition.lang = fromLang === 'ru' ? 'ru-RU' : 'az-AZ';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognition.onresult = (e) => {
+      const spoken = e.results[0][0].transcript;
+      setInputText(spoken);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => translate(spoken), 300);
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [listening, fromLang]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const toLang = direction === 'ru-az' ? 'az' : 'ru';
   const fromLabel = direction === 'ru-az' ? 'Русский' : 'Азербайджанский';
   const toLabel = direction === 'ru-az' ? 'Азербайджанский' : 'Русский';
@@ -115,9 +144,20 @@ export default function TranslateScreen() {
             rows={4}
             maxLength={500}
           />
-          {inputText.length > 0 && (
-            <button className="translate-screen__clear-btn" onClick={handleClear}>✕</button>
-          )}
+          <div className="translate-screen__input-actions">
+            {hasSpeechRecognition && (
+              <button
+                className={`translate-screen__mic-btn${listening ? ' translate-screen__mic-btn--active' : ''}`}
+                onClick={startVoice}
+                title={listening ? 'Остановить' : 'Голосовой ввод'}
+              >
+                {listening ? '⏹' : '🎙️'}
+              </button>
+            )}
+            {inputText.length > 0 && (
+              <button className="translate-screen__clear-btn" onClick={handleClear}>✕</button>
+            )}
+          </div>
           <div className="translate-screen__char-count">{inputText.length}/500</div>
         </div>
 

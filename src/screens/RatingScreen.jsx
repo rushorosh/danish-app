@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { fetchLeaderboard } from '../data/api.js';
+import { fetchLeaderboard, fetchLeaderboardPeriod } from '../data/api.js';
 import { MOCK_USERS } from '../data/leaderboard.js';
 import './RatingScreen.css';
 
@@ -13,13 +13,20 @@ function displayName(u) {
   return 'Пользователь';
 }
 
+const PERIODS = [
+  { key: 'all', label: 'Всё время' },
+  { key: 'week', label: 'Неделя' },
+  { key: 'day', label: 'День' },
+];
+
 export default function RatingScreen({ userScore, userName, telegramId, userAvatar }) {
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('all');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p = period) => {
     setLoading(true);
-    const data = await fetchLeaderboard();
+    const data = p === 'all' ? await fetchLeaderboard() : await fetchLeaderboardPeriod(p);
     if (data && data.length > 0) {
       const mapped = data.map(u => ({
         id: String(u.telegram_id),
@@ -44,7 +51,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
     setLoading(false);
   }, [telegramId, userName, userScore, userAvatar]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(period); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const myPosition = board ? board.findIndex(u => u.isMe) : -1;
   const top3 = board ? board.slice(0, 3) : [];
@@ -74,10 +81,23 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
             <div className="rating-screen__header-sub">Топ учеников</div>
           </div>
         </div>
-        <button className="rating-screen__refresh-btn" onClick={load} disabled={loading}>
+        <button className="rating-screen__refresh-btn" onClick={() => load(period)} disabled={loading}>
           <span>{loading ? '⏳' : '🔄'}</span>
           <span>{loading ? 'Загрузка...' : 'Обновить'}</span>
         </button>
+      </div>
+
+      {/* Period tabs */}
+      <div className="rating-tabs">
+        {PERIODS.map(p => (
+          <button
+            key={p.key}
+            className={`rating-tab${period === p.key ? ' rating-tab--active' : ''}`}
+            onClick={() => setPeriod(p.key)}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       {/* My position */}
