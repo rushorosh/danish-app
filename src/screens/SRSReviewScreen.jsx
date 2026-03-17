@@ -7,17 +7,19 @@ import './SRSReviewScreen.css';
 export default function SRSReviewScreen({ onComplete, onBack }) {
   const dueWords = useMemo(() => {
     const due = getDueWords();
-    // Enrich with full word data from WORDS
     return due.map(entry => {
+      // Use stored ru/transcription first, fallback to WORDS lookup
+      if (entry.ru) return { az: entry.az, ru: entry.ru, transcription: entry.transcription || '' };
       const full = WORDS.find(w => w.az.toLowerCase() === entry.az.toLowerCase());
-      return full || { az: entry.az, ru: '?', transcription: '' };
-    });
+      return full || null;
+    }).filter(Boolean);
   }, []);
 
   const [idx, setIdx] = useState(0);
-  const [phase, setPhase] = useState('question'); // 'question' | 'correct' | 'wrong'
+  const [phase, setPhase] = useState('question');
   const [selected, setSelected] = useState(null);
   const [correctCount, setCorrectCount] = useState(0);
+  const [showTip, setShowTip] = useState(false);
 
   const word = dueWords[idx];
   const total = dueWords.length;
@@ -25,7 +27,7 @@ export default function SRSReviewScreen({ onComplete, onBack }) {
   const options = useMemo(() => {
     if (!word) return [];
     const distractors = WORDS
-      .filter(w => w.az.toLowerCase() !== word.az.toLowerCase())
+      .filter(w => w.az.toLowerCase() !== word.az.toLowerCase() && w.ru && w.ru !== '?')
       .sort(() => Math.random() - 0.5)
       .slice(0, 3);
     return [...distractors, word].sort(() => Math.random() - 0.5);
@@ -42,13 +44,14 @@ export default function SRSReviewScreen({ onComplete, onBack }) {
 
   const handleNext = useCallback(() => {
     if (idx + 1 >= total) {
-      onComplete(correctCount + (phase === 'correct' ? 0 : 0));
+      onComplete(correctCount);
     } else {
       setIdx(i => i + 1);
       setPhase('question');
       setSelected(null);
+      setShowTip(false);
     }
-  }, [idx, total, onComplete, correctCount, phase]);
+  }, [idx, total, onComplete, correctCount]);
 
   if (!word || total === 0) {
     return (
@@ -81,7 +84,17 @@ export default function SRSReviewScreen({ onComplete, onBack }) {
 
       {/* Word card */}
       <div className="srs-word-card">
-        <div className="srs-word-card__az">{word.az}</div>
+        <div className="srs-word-card__az-wrap">
+          <span
+            className="srs-word-card__az"
+            onClick={() => setShowTip(v => !v)}
+          >
+            {word.az}
+          </span>
+          {showTip && (
+            <div className="srs-word-tip">{word.ru}</div>
+          )}
+        </div>
         {word.transcription && (
           <div className="srs-word-card__trans">{word.transcription}</div>
         )}

@@ -12,24 +12,33 @@ function loadSRS() {
 function saveSRS(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
 
 /** Add a word to SRS when first introduced */
-export function addWordToSRS(azWord) {
+export function addWordToSRS(azWord, meta = {}) {
   const data = loadSRS();
   const key = azWord.toLowerCase();
   if (!data[key]) {
-    data[key] = { box: 1, nextReview: Date.now(), reviews: 0, streak: 0 };
+    data[key] = { box: 1, nextReview: Date.now(), reviews: 0, streak: 0, ru: meta.ru || '', transcription: meta.transcription || '' };
+    saveSRS(data);
+  } else if (meta.ru && !data[key].ru) {
+    data[key].ru = meta.ru;
+    data[key].transcription = meta.transcription || '';
     saveSRS(data);
   }
 }
 
-/** Add multiple words at once */
-export function addWordsToSRS(azWords) {
+/** Add multiple words at once. Each item can be a string or { az, ru, transcription } */
+export function addWordsToSRS(words) {
   const data = loadSRS();
   const now = Date.now();
   let changed = false;
-  for (const w of azWords) {
-    const key = w.toLowerCase();
+  for (const w of words) {
+    const az = typeof w === 'string' ? w : w.az;
+    const key = az.toLowerCase();
     if (!data[key]) {
-      data[key] = { box: 1, nextReview: now, reviews: 0, streak: 0 };
+      data[key] = { box: 1, nextReview: now, reviews: 0, streak: 0, ru: w.ru || '', transcription: w.transcription || '' };
+      changed = true;
+    } else if (w.ru && !data[key].ru) {
+      data[key].ru = w.ru;
+      data[key].transcription = w.transcription || '';
       changed = true;
     }
   }

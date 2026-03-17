@@ -76,11 +76,50 @@
   position: relative;
 }
 
+.srs-word-card__az-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
 .srs-word-card__az {
   font-size: 28px;
   font-weight: 900;
   color: var(--text-primary);
   text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--primary-light);
+}
+
+.srs-word-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 10px;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.srs-word-tip::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #1a1a2e;
 }
 
 .srs-word-card__trans {

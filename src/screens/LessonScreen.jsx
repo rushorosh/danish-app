@@ -42,9 +42,10 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
 
   const allTiles = useMemo(() => {
     if (!lesson || lesson.type !== 'tiles') return [];
-    const correctWords = lesson.word.ru.split(' ');
+    const isParenthetical = w => /^\(.*\)$/.test(w.trim()) || w.trim() === '';
+    const correctWords = lesson.word.ru.split(' ').filter(w => !isParenthetical(w));
     const distractorWords = (lesson.distractors || [])
-      .flatMap(d => d.ru.split(' '))
+      .flatMap(d => d.ru.split(' ').filter(w => !isParenthetical(w)))
       .slice(0, 3);
     return [...correctWords, ...distractorWords]
       .slice(0, 6)
@@ -83,15 +84,16 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
     // Record introduced words to known vocabulary
     if (lesson?.type === 'introduce') {
       addKnownWords([lesson.word.az]);
-      addWordsToSRS([lesson.word.az]);
+      addWordsToSRS([lesson.word]);
     }
     if (currentIdx + 1 >= total || lives <= 0) {
       recordActivity();
       // Record all introduce words from this session
-      const introduceWords = lessons
-        .filter(l => l.type === 'introduce')
-        .map(l => l.word.az);
-      if (introduceWords.length) addKnownWords(introduceWords);
+      const introduceWords = lessons.filter(l => l.type === 'introduce').map(l => l.word);
+      if (introduceWords.length) {
+        addKnownWords(introduceWords.map(w => w.az));
+        addWordsToSRS(introduceWords);
+      }
       const testable = Math.max(total - lessons.filter(l => l.type === 'introduce').length, 1);
       const passed = score / testable >= 0.5 && lives > 0;
       onComplete(passed, score * 2);
