@@ -14,6 +14,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
 import { markNodeComplete, markSectionComplete, setProgressData } from './data/progress.js';
 import VocabScreen from './screens/VocabScreen';
+import SRSReviewScreen from './screens/SRSReviewScreen';
 import './App.css';
 
 const TABS = ['translate', 'learn', 'vocab', 'games', 'rating', 'settings'];
@@ -152,6 +153,19 @@ export default function App() {
   }, []);
 
   // Full-screen overlays
+  if (activeGame === 'srs-review') {
+    return (
+      <LanguageContext.Provider value={language}>
+        <SRSReviewScreen
+          onBack={() => setActiveGame(null)}
+          onComplete={(correct) => {
+            if (correct > 0) addScore(correct * 2);
+            setActiveGame(null);
+          }}
+        />
+      </LanguageContext.Provider>
+    );
+  }
   if (activeGame === 'flashcards') {
     return (
       <LanguageContext.Provider value={language}>
@@ -208,9 +222,7 @@ export default function App() {
       case 'vocab':
         return (
           <VocabScreen
-            onStartReview={() => {
-              // TODO: SRS review session — opens a lesson with due words
-            }}
+            onStartReview={() => setActiveGame('srs-review')}
           />
         );
       case 'settings':

@@ -1,0 +1,228 @@
+.srs-screen {
+  min-height: 100vh;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.25s ease;
+}
+
+/* Top bar */
+.srs-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  background: #fff;
+  border-bottom: 1.5px solid var(--border-light);
+}
+
+.srs-topbar__close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-gray);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.srs-topbar__progress-track {
+  flex: 1;
+  height: 10px;
+  background: var(--border-light);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.srs-topbar__progress-fill {
+  height: 100%;
+  background: #58CC02;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  min-width: 6px;
+}
+
+.srs-topbar__count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* Task label */
+.srs-task-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  padding: 20px 20px 0;
+}
+
+/* Word card */
+.srs-word-card {
+  margin: 16px 16px 8px;
+  background: #fff;
+  border-radius: 20px;
+  border: 2px solid var(--border-light);
+  padding: 24px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  position: relative;
+}
+
+.srs-word-card__az {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.srs-word-card__trans {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.srs-word-card__audio {
+  margin-top: 8px;
+  background: var(--primary-surface);
+  border: 1.5px solid var(--primary-light);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.srs-word-card__audio:active {
+  transform: scale(1.15);
+}
+
+/* Options */
+.srs-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 16px;
+}
+
+.srs-option {
+  width: 100%;
+  padding: 16px 20px;
+  background: #fff;
+  border: 2px solid var(--border-light);
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.srs-option--selected {
+  border-color: var(--primary);
+  background: var(--primary-surface);
+}
+
+.srs-option--correct {
+  border-color: #58CC02;
+  background: #F0FFF0;
+  color: #3D9900;
+}
+
+.srs-option--wrong {
+  border-color: #FF4B4B;
+  background: #FFF0F0;
+  color: #CC0000;
+}
+
+/* Feedback bar */
+.srs-feedback {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px;
+  border-top: 2px solid transparent;
+  animation: slideUp 0.2s ease;
+}
+
+.srs-feedback--correct {
+  background: #F0FFF0;
+  border-color: #58CC02;
+}
+
+.srs-feedback--wrong {
+  background: #FFF0F0;
+  border-color: #FF4B4B;
+}
+
+.srs-feedback__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.srs-feedback__next {
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 var(--primary-dark);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Done screen */
+.srs-done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+}
+
+.srs-done__emoji { font-size: 64px; }
+
+.srs-done__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.srs-done__sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.srs-done__btn {
+  margin-top: 20px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 14px 40px;
+  border-radius: 20px;
+  box-shadow: 0 4px 0 var(--primary-dark);
+}

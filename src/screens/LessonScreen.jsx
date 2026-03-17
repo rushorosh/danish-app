@@ -35,6 +35,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
   const [selectedOption, setSelectedOption] = useState(null);
   const [placedTiles, setPlacedTiles] = useState([]);
   const [availableTiles, setAvailableTiles] = useState([]);
+  const [showTip, setShowTip] = useState(false);
 
   const lesson = lessons[currentIdx];
   const total = lessons.length;
@@ -55,6 +56,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
   useEffect(() => {
     setSelectedOption(null);
     setPhase('question');
+    setShowTip(false);
     if (lesson?.type === 'tiles') {
       setAvailableTiles(allTiles);
       setPlacedTiles([]);
@@ -197,7 +199,17 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
             </div>
             <div className="lesson-bubble">
               <div className="lesson-bubble__word-row">
-                <span className="lesson-bubble__word">{lesson.word.az}</span>
+                <div className="lesson-bubble__word-wrap">
+                  <span
+                    className="lesson-bubble__word"
+                    onClick={() => setShowTip(v => !v)}
+                  >
+                    {lesson.word.az}
+                  </span>
+                  {showTip && (
+                    <div className="lesson-word-tip">{lesson.word.ru}</div>
+                  )}
+                </div>
                 <button className="lesson-audio-btn" onClick={() => playAz(lesson.word.az)} aria-label="Прослушать">🔊</button>
               </div>
               <div className="lesson-bubble__trans">{lesson.word.transcription}</div>
