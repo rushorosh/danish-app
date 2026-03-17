@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { COURSE } from '../data/course.js';
 import { getProgress, markSectionComplete, isSectionComplete } from '../data/progress.js';
+import { saveProgress } from '../data/api.js';
 import LessonScreen from './LessonScreen.jsx';
 import './LearnScreen.css';
 
@@ -121,6 +122,9 @@ export default function LearnScreen({ onScoreUpdate }) {
   const handleLessonComplete = (passed, earnedScore) => {
     if (passed && activeLesson) {
       markSectionComplete(activeLesson.moduleId, activeLesson.sectionId);
+      // Sync to Supabase in background
+      const tid = localStorage.getItem('az_tg_id');
+      if (tid) saveProgress(tid, activeLesson.moduleId, activeLesson.sectionId);
       refreshProgress();
       if (onScoreUpdate && earnedScore > 0) onScoreUpdate(earnedScore);
     }

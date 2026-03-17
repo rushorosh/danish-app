@@ -37,6 +37,13 @@
   border: 1.5px solid var(--primary-light);
   border-radius: 20px;
   padding: 5px 12px 5px 8px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.prog-header__score:active {
+  background: var(--primary-light);
+  transform: scale(0.95);
 }
 
 .prog-header__star {

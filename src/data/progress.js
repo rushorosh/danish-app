@@ -1,5 +1,10 @@
 // Keys: "mod_1_sec_3" → true (completed)
 
+// Called from App.jsx after loading progress from Supabase
+export function setProgressData(data) {
+  localStorage.setItem('az_progress', JSON.stringify(data));
+}
+
 export function getProgress() {
   try {
     return JSON.parse(localStorage.getItem('az_progress') || '{}');

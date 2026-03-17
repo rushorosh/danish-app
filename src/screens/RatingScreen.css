@@ -1,3 +1,10 @@
+.rating-loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
 .rating-screen {
   padding: 16px 16px 32px;
   display: flex;
