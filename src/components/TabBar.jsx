@@ -22,7 +22,7 @@ export default function TabBar({ tabs, activeTab, onTabChange }) {
           onClick={() => onTabChange(tab)}
         >
           <span className="tabbar__icon">{TAB_ICONS[tab]}</span>
-          <span className="tabbar__label">{t(tab)}</span>
+          {activeTab === tab && <span className="tabbar__label">{t(tab)}</span>}
         </button>
       ))}
     </nav>
