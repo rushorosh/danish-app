@@ -1,0 +1,377 @@
+.learn-screen {
+  min-height: 100vh;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ── Banner ──────────────────────────────────── */
+.learn-banner {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  margin: 12px 16px;
+  border-radius: 18px;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+
+.learn-banner:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.learn-banner__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.learn-banner__meta {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.learn-banner__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.learn-banner__icon {
+  font-size: 30px;
+  background: rgba(255, 255, 255, 0.25);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Path ────────────────────────────────────── */
+.learn-path {
+  padding: 8px 0 120px;
+  position: relative;
+}
+
+.learn-path__fog {
+  position: sticky;
+  bottom: 0;
+  height: 180px;
+  background: linear-gradient(to bottom, transparent, var(--bg-page));
+  pointer-events: none;
+  margin-top: -180px;
+}
+
+.learn-module-group {
+  padding: 0 0 8px;
+}
+
+/* ── Module header ───────────────────────────── */
+.learn-module-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 8px;
+}
+
+.learn-module-header__line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--border-light);
+}
+
+.learn-module-header__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* ── Node rows — zigzag ──────────────────────── */
+.learn-node-row {
+  display: flex;
+  padding: 8px 0;
+  position: relative;
+  min-height: 96px;
+  align-items: center;
+}
+
+.learn-node-row--left {
+  justify-content: flex-start;
+  padding-left: 40px;
+}
+
+.learn-node-row--center {
+  justify-content: center;
+}
+
+.learn-node-row--right {
+  justify-content: flex-end;
+  padding-right: 40px;
+}
+
+.learn-node-row--fog {
+  filter: blur(4px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ── Connector dots between nodes ────────────── */
+.learn-connector {
+  position: relative;
+  height: 36px;
+  width: 100%;
+}
+
+.learn-connector--fog {
+  opacity: 0.35;
+}
+
+.learn-connector__dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-light);
+  transform: translate(-50%, -50%);
+}
+
+/* ── Animated characters ─────────────────────── */
+.learn-char {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  user-select: none;
+  top: 50%;
+}
+
+.learn-char--left {
+  left: 8px;
+}
+
+.learn-char--right {
+  right: 8px;
+}
+
+.learn-char__figure {
+  font-size: 28px;
+  line-height: 1;
+  display: block;
+}
+
+.learn-char__action {
+  font-size: 16px;
+  line-height: 1;
+  display: block;
+}
+
+/* Animation: wave (greeting/farewell) */
+@keyframes char-wave {
+  0%, 100% { transform: translateY(-50%) rotate(-8deg); }
+  50%       { transform: translateY(-50%) rotate(8deg); }
+}
+.learn-char--wave {
+  animation: char-wave 1.2s ease-in-out infinite;
+}
+
+/* Animation: bob (general gentle float) */
+@keyframes char-bob {
+  0%, 100% { transform: translateY(-50%); }
+  50%       { transform: translateY(calc(-50% - 5px)); }
+}
+.learn-char--bob {
+  animation: char-bob 2.2s ease-in-out infinite;
+}
+
+/* Animation: bounce (excited/emphasis) */
+@keyframes char-bounce {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  50%       { transform: translateY(-56%) scale(1.12); }
+}
+.learn-char--bounce {
+  animation: char-bounce 1.4s ease-in-out infinite;
+}
+
+/* Animation: think (question/pondering) */
+@keyframes char-think {
+  0%, 100% { transform: translateY(-50%) rotate(0deg); }
+  50%       { transform: translateY(calc(-50% - 3px)) rotate(6deg); }
+}
+.learn-char--think {
+  animation: char-think 3s ease-in-out infinite;
+}
+
+/* Animation: eat (food sections) */
+@keyframes char-eat {
+  0%, 100% { transform: translateY(-50%) translateX(0) rotate(0deg); }
+  30%       { transform: translateY(-50%) translateX(3px) rotate(-5deg); }
+  70%       { transform: translateY(-50%) translateX(-2px) rotate(3deg); }
+}
+.learn-char--eat {
+  animation: char-eat 1s ease-in-out infinite;
+}
+
+/* Animation: drink (sipping) */
+@keyframes char-drink {
+  0%, 100% { transform: translateY(-50%); }
+  40%       { transform: translateY(calc(-50% - 4px)) rotate(-8deg); }
+  60%       { transform: translateY(calc(-50% - 4px)) rotate(-8deg); }
+}
+.learn-char--drink {
+  animation: char-drink 2s ease-in-out infinite;
+}
+
+/* Animation: cook (stirring motion) */
+@keyframes char-cook {
+  0%, 100% { transform: translateY(-50%) rotate(-5deg); }
+  50%       { transform: translateY(-50%) rotate(5deg); }
+}
+.learn-char--cook {
+  animation: char-cook 1s ease-in-out infinite;
+}
+
+/* Animation: walk (movement) */
+@keyframes char-walk {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  25%       { transform: translateY(-52%) translateX(-4px); }
+  75%       { transform: translateY(-52%) translateX(4px); }
+}
+.learn-char--walk {
+  animation: char-walk 1.3s ease-in-out infinite;
+}
+
+/* Animation: count (numbers) */
+@keyframes char-count {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  25%       { transform: translateY(-50%) scale(1.1); }
+  50%       { transform: translateY(-50%) scale(1); }
+  75%       { transform: translateY(-50%) scale(1.08); }
+}
+.learn-char--count {
+  animation: char-count 1.6s ease-in-out infinite;
+}
+
+/* Animation: talk (speaking) */
+@keyframes char-talk {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  30%, 70% { transform: translateY(-50%) scale(1.05); }
+  50%       { transform: translateY(-50%) scale(0.97); }
+}
+.learn-char--talk {
+  animation: char-talk 0.9s ease-in-out infinite;
+}
+
+/* Animation: bow (politeness) */
+@keyframes char-bow {
+  0%, 100% { transform: translateY(-50%) rotate(0deg); }
+  40%, 60% { transform: translateY(-50%) rotate(15deg); }
+}
+.learn-char--bow {
+  animation: char-bow 2.5s ease-in-out infinite;
+}
+
+/* ── Node button ─────────────────────────────── */
+.learn-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.learn-node__circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  position: relative;
+  transition: transform 0.15s;
+}
+
+.learn-node:active .learn-node__circle {
+  transform: scale(0.93);
+}
+
+/* Completed */
+.learn-node--completed .learn-node__circle {
+  background: var(--node-color, #58CC02);
+  box-shadow: 0 4px 0 var(--node-shadow, #3D9900);
+}
+
+.learn-node__check {
+  font-size: 26px;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Active: with pulse */
+.learn-node--active .learn-node__circle {
+  background: var(--node-color, #58CC02);
+  box-shadow:
+    0 4px 0 var(--node-shadow, #3D9900),
+    0 0 0 4px rgba(108, 58, 237, 0.15);
+  animation: nodePulse 2s infinite;
+}
+
+.learn-node__icon {
+  font-size: 28px;
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    box-shadow:
+      0 4px 0 var(--node-shadow, #3D9900),
+      0 0 0 4px rgba(108, 58, 237, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 4px 0 var(--node-shadow, #3D9900),
+      0 0 0 14px rgba(108, 58, 237, 0);
+  }
+}
+
+/* Locked */
+.learn-node--locked .learn-node__circle {
+  background: var(--bg-gray);
+  box-shadow: 0 4px 0 var(--border-light);
+  border: 2px solid var(--border-light);
+}
+
+.learn-node__lock {
+  font-size: 22px;
+  opacity: 0.5;
+}
+
+/* Start button */
+.learn-node__start-btn {
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 var(--primary-dark);
+}
