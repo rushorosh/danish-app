@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '../data/LanguageContext.jsx';
 import './TabBar.css';
 
 const TAB_ICONS = {
@@ -6,9 +7,11 @@ const TAB_ICONS = {
   learn: '📚',
   games: '🎮',
   rating: '🏆',
+  settings: '⚙️',
 };
 
-export default function TabBar({ tabs, labels, activeTab, onTabChange }) {
+export default function TabBar({ tabs, activeTab, onTabChange }) {
+  const t = useT('tabs');
   return (
     <nav className="tabbar">
       {tabs.map((tab) => (
@@ -18,7 +21,7 @@ export default function TabBar({ tabs, labels, activeTab, onTabChange }) {
           onClick={() => onTabChange(tab)}
         >
           <span className="tabbar__icon">{TAB_ICONS[tab]}</span>
-          <span className="tabbar__label">{labels[tab]}</span>
+          <span className="tabbar__label">{t(tab)}</span>
         </button>
       ))}
     </nav>

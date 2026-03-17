@@ -356,19 +356,20 @@
 
 .flashcards-result__score-ring {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
   background: var(--primary-bg);
   border: 3px solid var(--primary);
   border-radius: 50%;
-  width: 100px;
-  height: 100px;
-  justify-content: center;
+  width: 120px;
+  height: 120px;
   box-shadow: 0 4px 20px rgba(108, 58, 237, 0.2);
+  overflow: hidden;
 }
 
 .flashcards-result__score-num {
-  font-size: 38px;
+  font-size: 32px;
   font-weight: 900;
   color: var(--primary);
   line-height: 1;

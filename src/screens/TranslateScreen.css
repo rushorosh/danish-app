@@ -343,9 +343,32 @@
   font-weight: 700;
 }
 
-.translate-screen__powered {
-  text-align: center;
-  font-size: 11px;
-  color: #B0B7C3;
-  padding-bottom: 4px;
+.translate-screen__result-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.translate-screen__result-text {
+  flex: 1;
+}
+
+.translate-screen__speak-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-surface);
+  border: 1.5px solid var(--primary-light);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.translate-screen__speak-btn:active {
+  transform: scale(1.15);
+  background: var(--primary-light);
 }

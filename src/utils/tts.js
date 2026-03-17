@@ -1,30 +1,31 @@
-// Azure Cognitive Services TTS — az-AZ-BanuNeural (female) / az-AZ-BabekNeural (male)
+import { getSettings } from '../data/settings.js';
+
 const AZURE_KEY = import.meta.env.VITE_AZURE_TTS_KEY;
 const AZURE_REGION = import.meta.env.VITE_AZURE_TTS_REGION || 'eastus';
-const VOICE = 'az-AZ-BanuNeural';
 
-// Cache: text → object URL, so same word isn't fetched twice per session
+const VOICES = {
+  female: 'az-AZ-BanuNeural',
+  male: 'az-AZ-BabekNeural',
+};
+
+// Cache: voiceKey+text → object URL
 const cache = new Map();
 let currentAudio = null;
 
 export async function speakAzerbaijani(text, rate = 1.0) {
   if (!text) return;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
 
-  // Stop any currently playing audio
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
+  const voice = VOICES[getSettings().voice] || VOICES.female;
+  const cacheKey = `${voice}:${text}`;
 
-  // Use cached URL if available
-  if (cache.has(text)) {
-    const audio = new Audio(cache.get(text));
+  if (cache.has(cacheKey)) {
+    const audio = new Audio(cache.get(cacheKey));
     currentAudio = audio;
     audio.play().catch(() => {});
     return;
   }
 
-  // Fallback to Google TTS if no Azure key configured
   if (!AZURE_KEY) {
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=az&client=tw-ob&ttsspeed=${rate}`;
     const audio = new Audio(url);
@@ -34,12 +35,7 @@ export async function speakAzerbaijani(text, rate = 1.0) {
   }
 
   try {
-    const ssml = `<speak version='1.0' xml:lang='az-AZ'>
-      <voice xml:lang='az-AZ' name='${VOICE}'>
-        <prosody rate='${rate < 1 ? '-15%' : '+0%'}'>${escapeXml(text)}</prosody>
-      </voice>
-    </speak>`;
-
+    const ssml = `<speak version='1.0' xml:lang='az-AZ'><voice xml:lang='az-AZ' name='${voice}'><prosody rate='${rate < 1 ? '-15%' : '+0%'}'>${escapeXml(text)}</prosody></voice></speak>`;
     const response = await fetch(
       `https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
       {
@@ -52,19 +48,15 @@ export async function speakAzerbaijani(text, rate = 1.0) {
         body: ssml,
       }
     );
-
-    if (!response.ok) throw new Error(`Azure TTS error: ${response.status}`);
-
+    if (!response.ok) throw new Error(`Azure TTS ${response.status}`);
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-    cache.set(text, url);
-
+    cache.set(cacheKey, url);
     const audio = new Audio(url);
     currentAudio = audio;
     audio.play().catch(() => {});
   } catch (e) {
-    // Fallback to Google TTS on Azure error
-    console.warn('Azure TTS failed, falling back to Google:', e);
+    console.warn('Azure TTS failed, fallback:', e);
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=az&client=tw-ob&ttsspeed=${rate}`;
     const audio = new Audio(url);
     currentAudio = audio;
@@ -72,11 +64,18 @@ export async function speakAzerbaijani(text, rate = 1.0) {
   }
 }
 
+// Speak any language via Web Speech API (for Russian result in translator)
+export function speakText(text, lang) {
+  if (!text) return;
+  if (lang === 'az') { speakAzerbaijani(text); return; }
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const langMap = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', zh: 'zh-CN' };
+  u.lang = langMap[lang] || 'ru-RU';
+  window.speechSynthesis.speak(u);
+}
+
 function escapeXml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }

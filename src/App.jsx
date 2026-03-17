@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { LanguageContext } from './data/LanguageContext.jsx';
+import { getSettings, saveSettings } from './data/settings.js';
 import ProgressHeader from './components/ProgressHeader';
 import TabBar from './components/TabBar';
 import TranslateScreen from './screens/TranslateScreen';
@@ -8,18 +10,12 @@ import FlashcardsGame from './screens/FlashcardsGame';
 import ListeningGame from './screens/ListeningGame';
 import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
-import { upsertUser, updateScore, addScoreEvent, loadProgress } from './data/api.js';
+import SettingsScreen from './screens/SettingsScreen';
+import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress } from './data/api.js';
 import { markSectionComplete, setProgressData } from './data/progress.js';
-import { saveProgress } from './data/api.js';
 import './App.css';
 
-const TABS = ['translate', 'learn', 'games', 'rating'];
-const TAB_LABELS = {
-  translate: 'Перевод',
-  learn: 'Обучение',
-  games: 'Игры',
-  rating: 'Рейтинг',
-};
+const TABS = ['translate', 'learn', 'games', 'rating', 'settings'];
 
 const AVATARS = ['🦊','🐺','🦋','🦁','🐸','🦅','🐬','🦉','🐝','🏆'];
 function pickAvatar(id) {
@@ -29,8 +25,9 @@ function pickAvatar(id) {
 export default function App() {
   const [activeTab, setActiveTab] = useState('learn');
   const [activeGame, setActiveGame] = useState(null);
-  const [activeLesson, setActiveLesson] = useState(null); // { moduleId, sectionId, mod, sec }
-  const [progressVersion, setProgressVersion] = useState(0); // force LearnScreen refresh
+  const [activeLesson, setActiveLesson] = useState(null);
+  const [progressVersion, setProgressVersion] = useState(0);
+  const [language, setLanguage] = useState(() => getSettings().language);
 
   const [userScore, setUserScore] = useState(() =>
     parseInt(localStorage.getItem('az_score') || '0')
@@ -44,7 +41,7 @@ export default function App() {
 
   const scoreDebounce = useRef(null);
 
-  // Telegram WebApp init + Supabase user sync
+  // Telegram WebApp init + Supabase sync + referral detection
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -81,6 +78,20 @@ export default function App() {
             setProgressVersion(v => v + 1);
           }
         });
+
+        // Referral detection via start_param
+        const startParam = tg.initDataUnsafe?.start_param;
+        if (startParam?.startsWith('ref_')) {
+          const referrerId = startParam.replace('ref_', '');
+          if (referrerId && referrerId !== String(u.id)) {
+            addReferral(referrerId, u.id).then(ok => {
+              if (ok) {
+                // +50 points to referrer
+                addScoreEvent(referrerId, 50);
+              }
+            });
+          }
+        }
       }
     }
   }, []);
@@ -109,12 +120,10 @@ export default function App() {
     if (points > 0) addScore(points);
   }, [addScore]);
 
-  // Called from LearnScreen when user taps a section node
   const handleStartLesson = useCallback((mod, sec) => {
     setActiveLesson({ moduleId: mod.id, sectionId: sec.id, mod, sec });
   }, []);
 
-  // Called from LessonScreen when lesson finishes
   const handleLessonComplete = useCallback((passed, earnedScore) => {
     if (passed && activeLesson) {
       markSectionComplete(activeLesson.moduleId, activeLesson.sectionId);
@@ -126,23 +135,37 @@ export default function App() {
     setActiveLesson(null);
   }, [activeLesson, addScore]);
 
-  // Full-screen overlays (no header/tabbar)
+  const handleSettingsChange = useCallback((next) => {
+    if (next.language) setLanguage(next.language);
+  }, []);
+
+  // Full-screen overlays
   if (activeGame === 'flashcards') {
-    return <FlashcardsGame onBack={() => setActiveGame(null)} onScoreUpdate={handleScoreUpdate} />;
+    return (
+      <LanguageContext.Provider value={language}>
+        <FlashcardsGame onBack={() => setActiveGame(null)} onScoreUpdate={handleScoreUpdate} />
+      </LanguageContext.Provider>
+    );
   }
   if (activeGame === 'listening') {
-    return <ListeningGame onBack={() => setActiveGame(null)} onScoreUpdate={handleScoreUpdate} />;
+    return (
+      <LanguageContext.Provider value={language}>
+        <ListeningGame onBack={() => setActiveGame(null)} onScoreUpdate={handleScoreUpdate} />
+      </LanguageContext.Provider>
+    );
   }
   if (activeLesson) {
     return (
-      <LessonScreen
-        moduleId={activeLesson.moduleId}
-        sectionId={activeLesson.sectionId}
-        mod={activeLesson.mod}
-        sec={activeLesson.sec}
-        onComplete={handleLessonComplete}
-        onClose={() => setActiveLesson(null)}
-      />
+      <LanguageContext.Provider value={language}>
+        <LessonScreen
+          moduleId={activeLesson.moduleId}
+          sectionId={activeLesson.sectionId}
+          mod={activeLesson.mod}
+          sec={activeLesson.sec}
+          onComplete={handleLessonComplete}
+          onClose={() => setActiveLesson(null)}
+        />
+      </LanguageContext.Provider>
     );
   }
 
@@ -151,12 +174,7 @@ export default function App() {
       case 'translate':
         return <TranslateScreen />;
       case 'learn':
-        return (
-          <LearnScreen
-            key={progressVersion}
-            onStartLesson={handleStartLesson}
-          />
-        );
+        return <LearnScreen key={progressVersion} onStartLesson={handleStartLesson} />;
       case 'games':
         return (
           <GamesScreen
@@ -174,26 +192,35 @@ export default function App() {
             userAvatar={pickAvatar(telegramId)}
           />
         );
+      case 'settings':
+        return (
+          <SettingsScreen
+            telegramId={telegramId}
+            onSettingsChange={handleSettingsChange}
+          />
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="app">
-      <ProgressHeader
-        score={userScore}
-        onScoreClick={() => handleTabChange('rating')}
-      />
-      <main className="app__content">
-        {renderContent()}
-      </main>
-      <TabBar
-        tabs={TABS}
-        labels={TAB_LABELS}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
-    </div>
+    <LanguageContext.Provider value={language}>
+      <div className="app">
+        <ProgressHeader
+          score={userScore}
+          onScoreClick={() => handleTabChange('rating')}
+        />
+        <main className="app__content">
+          {renderContent()}
+        </main>
+        <TabBar
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          language={language}
+        />
+      </div>
+    </LanguageContext.Provider>
   );
 }

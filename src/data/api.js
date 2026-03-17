@@ -137,20 +137,21 @@ export async function fetchLeaderboardPeriod(period) {
     .gte('created_at', since);
 
   if (error) {
-    console.warn('[api] fetchLeaderboardPeriod error:', error.message);
-    return null;
+    console.warn('[api] fetchLeaderboardPeriod error:', error.message, '— falling back to all-time');
+    return fetchLeaderboard();
   }
+
+  if (!events || events.length === 0) return [];
 
   // Aggregate points by user
   const totals = {};
-  for (const e of events || []) {
-    totals[e.telegram_id] = (totals[e.telegram_id] || 0) + e.points;
+  for (const e of events) {
+    const key = String(e.telegram_id);
+    totals[key] = (totals[key] || 0) + e.points;
   }
 
-  if (Object.keys(totals).length === 0) return [];
-
   // Fetch user info for aggregated IDs
-  const ids = Object.keys(totals);
+  const ids = Object.keys(totals).map(Number);
   const { data: users, error: err2 } = await supabase
     .from('users')
     .select('telegram_id, first_name, last_name, username')
@@ -158,11 +159,44 @@ export async function fetchLeaderboardPeriod(period) {
 
   if (err2) {
     console.warn('[api] fetchLeaderboardPeriod users error:', err2.message);
-    return null;
+    return fetchLeaderboard();
   }
 
   return (users || [])
-    .map(u => ({ ...u, score: totals[u.telegram_id] || 0 }))
+    .map(u => ({ ...u, score: totals[String(u.telegram_id)] || 0 }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50);
+}
+
+// ─── Profile ──────────────────────────────────────────
+
+export async function updateUserProfile(telegramId, { phone, email, displayName }) {
+  if (!supabase || !telegramId) return;
+  const update = { updated_at: new Date().toISOString() };
+  if (phone !== undefined) update.phone = phone;
+  if (email !== undefined) update.email = email;
+  if (displayName !== undefined) update.display_name = displayName;
+  const { error } = await supabase.from('users').update(update).eq('telegram_id', telegramId);
+  if (error) console.warn('[api] updateUserProfile error:', error.message);
+}
+
+// ─── Referrals ────────────────────────────────────────
+
+export async function addReferral(referrerId, refereeId) {
+  if (!supabase || !referrerId || !refereeId || String(referrerId) === String(refereeId)) return false;
+  const { error } = await supabase
+    .from('referrals')
+    .upsert({ referrer_id: referrerId, referee_id: refereeId }, { onConflict: 'referee_id', ignoreDuplicates: true });
+  if (error) console.warn('[api] addReferral error:', error.message);
+  return !error;
+}
+
+export async function getReferralCount(telegramId) {
+  if (!supabase || !telegramId) return 0;
+  const { count, error } = await supabase
+    .from('referrals')
+    .select('*', { count: 'exact', head: true })
+    .eq('referrer_id', telegramId);
+  if (error) return 0;
+  return count || 0;
 }

@@ -1,13 +1,15 @@
 import React from 'react';
+import { useT } from '../data/LanguageContext.jsx';
 import './GamesScreen.css';
 
 export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListening }) {
+  const t = useT('games');
   return (
     <div className="games-screen">
       <div className="games-screen__header">
         <div className="games-screen__header-left">
           <span className="games-screen__header-icon">🎮</span>
-          <span className="games-screen__header-title">Игры</span>
+          <span className="games-screen__header-title">{t('title')}</span>
         </div>
         <div className="games-screen__score-badge">
           <span>⭐</span>
@@ -15,9 +17,7 @@ export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListeni
         </div>
       </div>
 
-      <div className="games-screen__subtitle">
-        Зарабатывай очки, играя в игры
-      </div>
+      <div className="games-screen__subtitle">{t('subtitle')}</div>
 
       <div className="games-screen__cards">
         {/* Flashcards */}
@@ -26,21 +26,19 @@ export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListeni
             <div className="games-screen__card-icon-wrap">
               <span className="games-screen__card-icon">🃏</span>
             </div>
-            <div className="games-screen__card-badge">+1 очко за ответ</div>
+            <div className="games-screen__card-badge">{t('flashcards_badge')}</div>
           </div>
           <div className="games-screen__card-body">
-            <div className="games-screen__card-title">Карточки</div>
-            <div className="games-screen__card-desc">
-              Угадай перевод слова. Выбери правильный ответ из четырёх вариантов.
-            </div>
+            <div className="games-screen__card-title">{t('flashcards')}</div>
+            <div className="games-screen__card-desc">{t('flashcards_desc')}</div>
           </div>
           <div className="games-screen__card-footer">
             <div className="games-screen__card-meta">
-              <span className="games-screen__card-meta-item">📝 10 слов</span>
+              <span className="games-screen__card-meta-item">📝 10</span>
               <span className="games-screen__card-meta-item">⏱ ~3 мин</span>
             </div>
             <button className="games-screen__play-btn games-screen__play-btn--purple" onClick={onOpenFlashcards}>
-              Играть
+              {t('play')}
             </button>
           </div>
         </div>
@@ -49,23 +47,21 @@ export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListeni
         <div className="games-screen__card games-screen__card--pink">
           <div className="games-screen__card-top">
             <div className="games-screen__card-icon-wrap games-screen__card-icon-wrap--pink">
-              <span className="games-screen__card-icon">🎙️</span>
+              <span className="games-screen__card-icon">🎧</span>
             </div>
-            <div className="games-screen__card-badge games-screen__card-badge--pink">+2 очка за ответ</div>
+            <div className="games-screen__card-badge games-screen__card-badge--pink">{t('listening_badge')}</div>
           </div>
           <div className="games-screen__card-body">
-            <div className="games-screen__card-title">Аудирование</div>
-            <div className="games-screen__card-desc">
-              Прослушай слово и произнеси его вслух. Тренируй произношение азербайджанского языка.
-            </div>
+            <div className="games-screen__card-title">{t('listening')}</div>
+            <div className="games-screen__card-desc">{t('listening_desc')}</div>
           </div>
           <div className="games-screen__card-footer">
             <div className="games-screen__card-meta">
-              <span className="games-screen__card-meta-item">🔊 8 слов</span>
+              <span className="games-screen__card-meta-item">🔊 8</span>
               <span className="games-screen__card-meta-item">⏱ ~5 мин</span>
             </div>
             <button className="games-screen__play-btn games-screen__play-btn--pink" onClick={onOpenListening}>
-              Играть
+              {t('play')}
             </button>
           </div>
         </div>
@@ -75,17 +71,15 @@ export default function GamesScreen({ userScore, onOpenFlashcards, onOpenListeni
       <div className="games-screen__score-summary">
         <div className="games-screen__score-icon">🏆</div>
         <div className="games-screen__score-info">
-          <div className="games-screen__score-label">Ваш счёт</div>
-          <div className="games-screen__score-number">{userScore} очков</div>
+          <div className="games-screen__score-label">{t('your_score')}</div>
+          <div className="games-screen__score-number">{userScore} {t('points')}</div>
         </div>
       </div>
 
       {/* Tip */}
       <div className="games-screen__tip">
         <span className="games-screen__tip-icon">💡</span>
-        <span className="games-screen__tip-text">
-          Играй каждый день, чтобы подняться выше в рейтинге!
-        </span>
+        <span className="games-screen__tip-text">{t('tip')}</span>
       </div>
     </div>
   );

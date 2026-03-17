@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { fetchLeaderboard, fetchLeaderboardPeriod } from '../data/api.js';
+import { useT } from '../data/LanguageContext.jsx';
 import './RatingScreen.css';
 
 const AVATARS = ['🦊','🐺','🦋','🦁','🐸','🦅','🐬','🦉','🐝','🏆','🦌','🐻','🦜','🐯','🦈'];
@@ -12,14 +13,8 @@ function displayName(u) {
   return 'Пользователь';
 }
 
-// Period order: День → Неделя → Всё время
-const PERIODS = [
-  { key: 'day',  label: '📅 День' },
-  { key: 'week', label: '📆 Неделя' },
-  { key: 'all',  label: '🏆 Всё время' },
-];
-
 export default function RatingScreen({ userScore, userName, telegramId, userAvatar }) {
+  const t = useT('rating');
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('day');
@@ -78,19 +73,23 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         <div className="rating-screen__header-left">
           <span className="rating-screen__header-icon">🏆</span>
           <div>
-            <div className="rating-screen__header-title">Рейтинг</div>
-            <div className="rating-screen__header-sub">Топ учеников</div>
+            <div className="rating-screen__header-title">{t('title')}</div>
+            <div className="rating-screen__header-sub">{t('subtitle')}</div>
           </div>
         </div>
         <button className="rating-screen__refresh-btn" onClick={() => load(period)} disabled={loading}>
           <span>{loading ? '⏳' : '🔄'}</span>
-          <span>{loading ? 'Загрузка...' : 'Обновить'}</span>
+          <span>{loading ? '...' : t('refresh')}</span>
         </button>
       </div>
 
       {/* Period tabs */}
       <div className="rating-tabs">
-        {PERIODS.map(p => (
+        {[
+          { key: 'day', label: t('day') },
+          { key: 'week', label: t('week') },
+          { key: 'all', label: t('all') },
+        ].map(p => (
           <button
             key={p.key}
             className={`rating-tab${period === p.key ? ' rating-tab--active' : ''}`}
@@ -104,24 +103,22 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
       {/* My position */}
       {myPosition >= 0 && (
         <div className="rating-screen__my-position">
-          <span className="rating-screen__my-pos-label">Ваша позиция:</span>
+          <span className="rating-screen__my-pos-label">{t('my_pos')}</span>
           <span className="rating-screen__my-pos-rank">#{myPosition + 1}</span>
           <span className="rating-screen__my-pos-score">⭐ {userScore}</span>
         </div>
       )}
 
       {loading && (
-        <div className="rating-loading">⏳ Загружаем рейтинг...</div>
+        <div className="rating-loading">{t('loading')}</div>
       )}
 
       {!loading && board !== null && board.length === 0 && (
         <div className="rating-empty">
           <div className="rating-empty__icon">📭</div>
-          <div className="rating-empty__title">Пока нет данных</div>
+          <div className="rating-empty__title">{t('no_data')}</div>
           <div className="rating-empty__sub">
-            {period === 'day' ? 'Никто ещё не учился сегодня. Будь первым!' :
-             period === 'week' ? 'Никто ещё не учился на этой неделе.' :
-             'Начни учиться, чтобы появиться в рейтинге!'}
+            {period === 'day' ? t('no_data_day') : period === 'week' ? t('no_data_week') : t('no_data_all')}
           </div>
         </div>
       )}
@@ -172,7 +169,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
                 <div className="rating-row__info">
                   <div className="rating-row__name">
                     {user.name}
-                    {user.isMe && <span className="rating-row__you-badge">Вы</span>}
+                    {user.isMe && <span className="rating-row__you-badge">{t('my_pos').replace(':', '')}</span>}
                   </div>
                 </div>
                 <div className="rating-row__score">
@@ -190,7 +187,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         <div className="rating-top1-banner">
           <div className="rating-top1-banner__crown">👑</div>
           <div className="rating-top1-banner__content">
-            <div className="rating-top1-banner__label">Лидер всех времён</div>
+            <div className="rating-top1-banner__label">{t('leader')}</div>
             <div className="rating-top1-banner__name">
               <span>{topAllTime.avatar}</span>
               <span>{topAllTime.name}</span>
@@ -198,7 +195,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
           </div>
           <div className="rating-top1-banner__score">
             <span className="rating-top1-banner__score-num">⭐ {topAllTime.score.toLocaleString()}</span>
-            <span className="rating-top1-banner__score-label">очков</span>
+            <span className="rating-top1-banner__score-label">{t('points_lbl')}</span>
           </div>
         </div>
       )}

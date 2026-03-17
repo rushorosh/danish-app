@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { COURSE } from '../data/course.js';
 import { getProgress, isSectionComplete } from '../data/progress.js';
+import { useT } from '../data/LanguageContext.jsx';
 import './LearnScreen.css';
 
 // Zigzag positions for 10 sections per module
@@ -84,6 +85,7 @@ const CHARS = [
 ];
 
 export default function LearnScreen({ onStartLesson }) {
+  const t = useT('learn');
   const [progress] = useState(() => getProgress());
   const activeRef = useRef(null);
 
@@ -134,7 +136,7 @@ export default function LearnScreen({ onStartLesson }) {
         >
           <div className="learn-banner__text">
             <div className="learn-banner__meta">
-              МОДУЛЬ {nextSection.mod.id}, РАЗДЕЛ {nextSection.sec.id}
+              {t('module')} {nextSection.mod.id}, {t('section')} {nextSection.sec.id}
             </div>
             <div className="learn-banner__title">{nextSection.sec.title}</div>
           </div>
@@ -157,7 +159,7 @@ export default function LearnScreen({ onStartLesson }) {
                   className="learn-module-header__label"
                   style={{ color: mod.color }}
                 >
-                  МОДУЛЬ {mod.id} · {mod.title}
+                  {t('module')} {mod.id} · {mod.title}
                 </div>
                 <div className="learn-module-header__line" />
               </div>
@@ -209,7 +211,7 @@ export default function LearnScreen({ onStartLesson }) {
                           )}
                         </div>
                         {status === 'active' && (
-                          <div className="learn-node__start-btn">НАЧАТЬ</div>
+                          <div className="learn-node__start-btn">{t('start')}</div>
                         )}
                       </button>
                     </div>
