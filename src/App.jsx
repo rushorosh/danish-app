@@ -12,10 +12,11 @@ import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
-import { markSectionComplete, setProgressData } from './data/progress.js';
+import { markNodeComplete, markSectionComplete, setProgressData } from './data/progress.js';
+import VocabScreen from './screens/VocabScreen';
 import './App.css';
 
-const TABS = ['translate', 'learn', 'games', 'rating', 'settings'];
+const TABS = ['translate', 'learn', 'vocab', 'games', 'rating', 'settings'];
 
 const AVATARS = ['🦊','🐺','🦋','🦁','🐸','🦅','🐬','🦉','🐝','🏆'];
 function pickAvatar(id) {
@@ -123,15 +124,24 @@ export default function App() {
     if (points > 0) addScore(points);
   }, [addScore]);
 
-  const handleStartLesson = useCallback((mod, sec) => {
-    setActiveLesson({ moduleId: mod.id, sectionId: sec.id, mod, sec });
+  const handleStartLesson = useCallback((mod, sec, nodeIdx) => {
+    setActiveLesson({ moduleId: mod.id, sectionId: sec.id, mod, sec, nodeIdx });
   }, []);
 
   const handleLessonComplete = useCallback((passed, earnedScore) => {
     if (passed && activeLesson) {
-      markSectionComplete(activeLesson.moduleId, activeLesson.sectionId);
-      const tid = localStorage.getItem('az_tg_id');
-      if (tid) saveProgress(tid, activeLesson.moduleId, activeLesson.sectionId);
+      const { moduleId, sectionId, nodeIdx } = activeLesson;
+      let sectionJustDone = false;
+      if (nodeIdx != null) {
+        sectionJustDone = markNodeComplete(moduleId, sectionId, nodeIdx + 1);
+      } else {
+        markSectionComplete(moduleId, sectionId);
+        sectionJustDone = true;
+      }
+      if (sectionJustDone) {
+        const tid = localStorage.getItem('az_tg_id');
+        if (tid) saveProgress(tid, moduleId, sectionId);
+      }
       setProgressVersion(v => v + 1);
       if (earnedScore > 0) addScore(earnedScore);
     }
@@ -165,6 +175,7 @@ export default function App() {
           sectionId={activeLesson.sectionId}
           mod={activeLesson.mod}
           sec={activeLesson.sec}
+          nodeIdx={activeLesson.nodeIdx}
           onComplete={handleLessonComplete}
           onClose={() => setActiveLesson(null)}
         />
@@ -193,6 +204,14 @@ export default function App() {
             userName={userName}
             telegramId={telegramId}
             userAvatar={pickAvatar(telegramId)}
+          />
+        );
+      case 'vocab':
+        return (
+          <VocabScreen
+            onStartReview={() => {
+              // TODO: SRS review session — opens a lesson with due words
+            }}
           />
         );
       case 'settings':

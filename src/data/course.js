@@ -104,6 +104,9 @@ export const BONUS_MODULE = {
   ],
 };
 
+// Re-export for convenience
+export { NODE_INDICES, NODE_ICONS, NODES_PER_SECTION } from './progress.js';
+
 // Topic mapping per module
 export const TOPIC_MAP = {
   '1': 'greetings',

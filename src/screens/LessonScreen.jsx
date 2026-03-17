@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { generateLessons, generateLessonsFromDB, TOPIC_MAP } from '../data/course.js';
+import { generateLessons, generateLessonsFromDB, TOPIC_MAP, NODE_INDICES } from '../data/course.js';
 import { speakAzerbaijani } from '../utils/tts.js';
 import { recordActivity } from '../data/streak.js';
 import { addKnownWords } from '../data/wordProgress.js';
+import { addWordsToSRS } from '../data/srs.js';
 import { fetchVocabulary, fetchSentencesByTopic } from '../data/api.js';
 import './LessonScreen.css';
 
@@ -10,8 +11,16 @@ const TOTAL_LIVES = 5;
 
 function playAz(text) { speakAzerbaijani(text, 0.85); }
 
-export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete, onClose }) {
-  const [lessons, setLessons] = useState(() => generateLessons(moduleId, sectionId));
+// nodeIdx: 0-based index into NODE_INDICES (which lessons to show)
+export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, onComplete, onClose }) {
+  const [allLessons, setAllLessons] = useState(() => generateLessons(moduleId, sectionId));
+
+  // Slice to just the lessons for this node
+  const lessons = useMemo(() => {
+    if (nodeIdx == null) return allLessons;
+    const indices = NODE_INDICES[nodeIdx] || [];
+    return allLessons.filter((_, i) => indices.includes(i));
+  }, [allLessons, nodeIdx]);
   const [currentIdx, setCurrentIdx] = useState(0);
 
   // Load from Supabase DB if available, replace static lessons
@@ -23,7 +32,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete
       fetchSentencesByTopic(topic, sectionId >= 4 ? 5 : 3),
     ]).then(([dbWords, dbSentences]) => {
       if (dbWords && dbWords.length >= 3) {
-        setLessons(generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences, dbWords));
+        setAllLessons(generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences, dbWords));
       }
     }).catch(() => {});
   }, [moduleId, sectionId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -79,6 +88,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete
     // Record introduced words to known vocabulary
     if (lesson?.type === 'introduce') {
       addKnownWords([lesson.word.az]);
+      addWordsToSRS([lesson.word.az]);
     }
     if (currentIdx + 1 >= total || lives <= 0) {
       recordActivity();

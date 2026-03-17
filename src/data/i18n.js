@@ -1,6 +1,6 @@
 export const TRANSLATIONS = {
   ru: {
-    tabs: { translate: 'Перевод', learn: 'Обучение', games: 'Игры', rating: 'Рейтинг', settings: 'Настройки' },
+    tabs: { translate: 'Перевод', learn: 'Обучение', vocab: 'Словарь', games: 'Игры', rating: 'Рейтинг', settings: 'Настройки' },
     translate: {
       title: 'Переводчик', placeholder_ru: 'Введите текст на русском...', placeholder_az: 'Azerbaycan dilini daxil edin...',
       btn: 'Перевести', translating: 'Переводим...', result_ph: 'Перевод появится здесь...',
@@ -32,7 +32,7 @@ export const TRANSLATIONS = {
     },
   },
   az: {
-    tabs: { translate: 'Tərcümə', learn: 'Öyrənmə', games: 'Oyunlar', rating: 'Reytinq', settings: 'Parametrlər' },
+    tabs: { translate: 'Tərcümə', learn: 'Öyrənmə', vocab: 'Lüğət', games: 'Oyunlar', rating: 'Reytinq', settings: 'Parametrlər' },
     translate: {
       title: 'Tərcüməçi', placeholder_ru: 'Rus dilində mətn daxil edin...', placeholder_az: 'Azərbaycan dilini daxil edin...',
       btn: 'Tərcümə et', translating: 'Tərcümə edirik...', result_ph: 'Tərcümə burada görünəcək...',
@@ -64,7 +64,7 @@ export const TRANSLATIONS = {
     },
   },
   en: {
-    tabs: { translate: 'Translate', learn: 'Learn', games: 'Games', rating: 'Rating', settings: 'Settings' },
+    tabs: { translate: 'Translate', learn: 'Learn', vocab: 'Vocab', games: 'Games', rating: 'Rating', settings: 'Settings' },
     translate: {
       title: 'Translator', placeholder_ru: 'Enter text in Russian...', placeholder_az: 'Enter text in Azerbaijani...',
       btn: 'Translate', translating: 'Translating...', result_ph: 'Translation will appear here...',
@@ -96,7 +96,7 @@ export const TRANSLATIONS = {
     },
   },
   de: {
-    tabs: { translate: 'Übersetzen', learn: 'Lernen', games: 'Spiele', rating: 'Rangliste', settings: 'Einstellungen' },
+    tabs: { translate: 'Übersetzen', learn: 'Lernen', vocab: 'Wörterbuch', games: 'Spiele', rating: 'Rangliste', settings: 'Einstellungen' },
     translate: {
       title: 'Übersetzer', placeholder_ru: 'Text auf Russisch eingeben...', placeholder_az: 'Text auf Aserbaidschanisch eingeben...',
       btn: 'Übersetzen', translating: 'Übersetzen...', result_ph: 'Übersetzung erscheint hier...',
@@ -128,7 +128,7 @@ export const TRANSLATIONS = {
     },
   },
   es: {
-    tabs: { translate: 'Traducción', learn: 'Aprendizaje', games: 'Juegos', rating: 'Clasificación', settings: 'Configuración' },
+    tabs: { translate: 'Traducción', learn: 'Aprendizaje', vocab: 'Vocabulario', games: 'Juegos', rating: 'Clasificación', settings: 'Configuración' },
     translate: {
       title: 'Traductor', placeholder_ru: 'Ingrese texto en ruso...', placeholder_az: 'Ingrese texto en azerbaiyano...',
       btn: 'Traducir', translating: 'Traduciendo...', result_ph: 'La traducción aparecerá aquí...',
@@ -160,7 +160,7 @@ export const TRANSLATIONS = {
     },
   },
   fr: {
-    tabs: { translate: 'Traduction', learn: 'Apprendre', games: 'Jeux', rating: 'Classement', settings: 'Paramètres' },
+    tabs: { translate: 'Traduction', learn: 'Apprendre', vocab: 'Vocabulaire', games: 'Jeux', rating: 'Classement', settings: 'Paramètres' },
     translate: {
       title: 'Traducteur', placeholder_ru: 'Entrez le texte en russe...', placeholder_az: "Entrez le texte en azerbaïdjanais...",
       btn: 'Traduire', translating: 'Traduction...', result_ph: 'La traduction apparaîtra ici...',
@@ -192,7 +192,7 @@ export const TRANSLATIONS = {
     },
   },
   zh: {
-    tabs: { translate: '翻译', learn: '学习', games: '游戏', rating: '排名', settings: '设置' },
+    tabs: { translate: '翻译', learn: '学习', vocab: '词典', games: '游戏', rating: '排名', settings: '设置' },
     translate: {
       title: '翻译器', placeholder_ru: '请输入俄语文字...', placeholder_az: '请输入阿塞拜疆语文字...',
       btn: '翻译', translating: '翻译中...', result_ph: '翻译将显示在这里...',

@@ -5,6 +5,7 @@ import './TabBar.css';
 const TAB_ICONS = {
   translate: '🌐',
   learn: '📚',
+  vocab: '📖',
   games: '🎮',
   rating: '🏆',
   settings: '⚙️',

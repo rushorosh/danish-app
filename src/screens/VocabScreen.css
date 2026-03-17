@@ -1,0 +1,222 @@
+.vocab-screen {
+  min-height: 100vh;
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.3s ease;
+  padding-bottom: 100px;
+}
+
+/* ── Header ──────────────────────────────────── */
+.vocab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 8px;
+}
+
+.vocab-header__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.vocab-header__count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-gray);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* ── Review button ───────────────────────────── */
+.vocab-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 16px;
+  padding: 14px 16px;
+  background: #58CC02;
+  border-radius: 16px;
+  box-shadow: 0 4px 0 #3D9900;
+  transition: transform 0.12s;
+}
+
+.vocab-review-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 0 #3D9900;
+}
+
+.vocab-review-btn__icon {
+  font-size: 24px;
+}
+
+.vocab-review-btn__text {
+  flex: 1;
+  text-align: left;
+}
+
+.vocab-review-btn__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.vocab-review-btn__sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+.vocab-review-btn__arrow {
+  font-size: 18px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.vocab-review-done {
+  margin: 8px 16px;
+  padding: 12px 16px;
+  background: var(--bg-gray);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ── Search ──────────────────────────────────── */
+.vocab-search-wrap {
+  display: flex;
+  align-items: center;
+  margin: 8px 16px;
+  background: var(--bg-gray);
+  border-radius: 12px;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.vocab-search-icon {
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+.vocab-search {
+  flex: 1;
+  height: 40px;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.vocab-search::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.vocab-search-clear {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 4px;
+}
+
+/* ── Filter chips ────────────────────────────── */
+.vocab-filters {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.vocab-filters::-webkit-scrollbar { display: none; }
+
+.vocab-filter-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--bg-gray);
+  color: var(--text-secondary);
+  border: 1.5px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.vocab-filter-chip--active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary-dark);
+}
+
+/* ── Word list ───────────────────────────────── */
+.vocab-list {
+  flex: 1;
+  padding: 4px 16px;
+}
+
+.vocab-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.vocab-word {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  border: 1.5px solid var(--border-light);
+  gap: 12px;
+}
+
+.vocab-word--due {
+  border-color: #FF9600;
+  background: #FFF8EE;
+}
+
+.vocab-word__left {
+  flex: 1;
+  min-width: 0;
+}
+
+.vocab-word__az {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.vocab-word__trans {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.vocab-word__right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.vocab-word__ru {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vocab-word__srs {
+  font-size: 10px;
+  color: #58CC02;
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
