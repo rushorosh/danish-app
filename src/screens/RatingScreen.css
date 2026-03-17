@@ -25,6 +25,106 @@
   box-shadow: 0 2px 8px rgba(108, 58, 237, 0.12);
 }
 
+/* Empty state */
+.rating-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  gap: 8px;
+  text-align: center;
+}
+
+.rating-empty__icon {
+  font-size: 48px;
+  margin-bottom: 4px;
+}
+
+.rating-empty__title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.rating-empty__sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 260px;
+}
+
+/* Top-1 sticky banner */
+.rating-top1-banner {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(135deg, #1a0533 0%, #3b0764 50%, #6c3aed 100%);
+  border-radius: 20px 20px 0 0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 -4px 24px rgba(108, 58, 237, 0.4);
+  margin-top: 8px;
+  z-index: 10;
+}
+
+.rating-top1-banner__crown {
+  font-size: 32px;
+  animation: crownBounce 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes crownBounce {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50%       { transform: translateY(-4px) rotate(5deg); }
+}
+
+.rating-top1-banner__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.rating-top1-banner__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 220, 100, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 3px;
+}
+
+.rating-top1-banner__name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rating-top1-banner__score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.rating-top1-banner__score-num {
+  font-size: 18px;
+  font-weight: 900;
+  color: #FFD700;
+  letter-spacing: -0.5px;
+}
+
+.rating-top1-banner__score-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .rating-loading {
   text-align: center;
   padding: 40px;

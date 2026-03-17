@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { fetchLeaderboard, fetchLeaderboardPeriod } from '../data/api.js';
-import { MOCK_USERS } from '../data/leaderboard.js';
 import './RatingScreen.css';
 
 const AVATARS = ['🦊','🐺','🦋','🦁','🐸','🦅','🐬','🦉','🐝','🏆','🦌','🐻','🦜','🐯','🦈'];
@@ -9,47 +8,49 @@ function pickAvatar(id) {
 }
 function displayName(u) {
   if (u.first_name || u.last_name) return [u.first_name, u.last_name].filter(Boolean).join(' ');
-  if (u.username) return u.username;
+  if (u.username) return '@' + u.username;
   return 'Пользователь';
 }
 
+// Period order: День → Неделя → Всё время
 const PERIODS = [
-  { key: 'all', label: 'Всё время' },
-  { key: 'week', label: 'Неделя' },
-  { key: 'day', label: 'День' },
+  { key: 'day',  label: '📅 День' },
+  { key: 'week', label: '📆 Неделя' },
+  { key: 'all',  label: '🏆 Всё время' },
 ];
 
 export default function RatingScreen({ userScore, userName, telegramId, userAvatar }) {
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState('day');
+  const [topAllTime, setTopAllTime] = useState(null); // always the #1 of all time
 
-  const load = useCallback(async (p = period) => {
+  const mapUsers = useCallback((data) => {
+    if (!data || data.length === 0) return [];
+    return data.map(u => ({
+      id: String(u.telegram_id),
+      name: displayName(u),
+      score: u.score || 0,
+      avatar: pickAvatar(u.telegram_id),
+      isMe: String(u.telegram_id) === String(telegramId),
+    }));
+  }, [telegramId]);
+
+  // Always load all-time top-1 for the sticky banner
+  useEffect(() => {
+    fetchLeaderboard().then(data => {
+      const mapped = mapUsers(data);
+      if (mapped.length > 0) setTopAllTime(mapped[0]);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const load = useCallback(async (p) => {
     setLoading(true);
+    setBoard(null);
     const data = p === 'all' ? await fetchLeaderboard() : await fetchLeaderboardPeriod(p);
-    if (data && data.length > 0) {
-      const mapped = data.map(u => ({
-        id: String(u.telegram_id),
-        name: displayName(u),
-        score: u.score || 0,
-        avatar: pickAvatar(u.telegram_id),
-        isMe: String(u.telegram_id) === String(telegramId),
-      }));
-      setBoard(mapped);
-    } else {
-      // Fallback to mock data + current user
-      const mock = MOCK_USERS.map(u => ({ ...u, isMe: false }));
-      if (userName && userScore > 0) {
-        const existing = mock.findIndex(u => u.id === 'me');
-        const me = { id: 'me', name: userName, score: userScore, avatar: userAvatar || '⭐', isMe: true };
-        if (existing >= 0) mock[existing] = me;
-        else mock.push(me);
-        mock.sort((a, b) => b.score - a.score);
-      }
-      setBoard(mock);
-    }
+    setBoard(mapUsers(data));
     setLoading(false);
-  }, [telegramId, userName, userScore, userAvatar]);
+  }, [mapUsers]);
 
   useEffect(() => { load(period); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -113,7 +114,19 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         <div className="rating-loading">⏳ Загружаем рейтинг...</div>
       )}
 
-      {!loading && board && (
+      {!loading && board !== null && board.length === 0 && (
+        <div className="rating-empty">
+          <div className="rating-empty__icon">📭</div>
+          <div className="rating-empty__title">Пока нет данных</div>
+          <div className="rating-empty__sub">
+            {period === 'day' ? 'Никто ещё не учился сегодня. Будь первым!' :
+             period === 'week' ? 'Никто ещё не учился на этой неделе.' :
+             'Начни учиться, чтобы появиться в рейтинге!'}
+          </div>
+        </div>
+      )}
+
+      {!loading && board && board.length > 0 && (
         <>
           {/* Podium */}
           {top3.length >= 2 && (
@@ -172,9 +185,27 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         </>
       )}
 
+      {/* Sticky top-1 motivational banner */}
+      {topAllTime && (
+        <div className="rating-top1-banner">
+          <div className="rating-top1-banner__crown">👑</div>
+          <div className="rating-top1-banner__content">
+            <div className="rating-top1-banner__label">Лидер всех времён</div>
+            <div className="rating-top1-banner__name">
+              <span>{topAllTime.avatar}</span>
+              <span>{topAllTime.name}</span>
+            </div>
+          </div>
+          <div className="rating-top1-banner__score">
+            <span className="rating-top1-banner__score-num">⭐ {topAllTime.score.toLocaleString()}</span>
+            <span className="rating-top1-banner__score-label">очков</span>
+          </div>
+        </div>
+      )}
+
       <div className="rating-screen__footer">
         <span>🔄</span>
-        <span>Обновляется в реальном времени</span>
+        <span>Данные из реальной базы пользователей</span>
       </div>
     </div>
   );

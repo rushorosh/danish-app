@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { COURSE } from '../data/course.js';
-import { getProgress, markSectionComplete, isSectionComplete } from '../data/progress.js';
-import { saveProgress } from '../data/api.js';
-import LessonScreen from './LessonScreen.jsx';
+import { getProgress, isSectionComplete } from '../data/progress.js';
 import './LearnScreen.css';
 
 // Zigzag positions for 10 sections per module
@@ -85,11 +83,8 @@ const CHARS = [
   ],
 ];
 
-export default function LearnScreen({ onScoreUpdate }) {
-  const [progress, setProgress] = useState(() => getProgress());
-  const [activeLesson, setActiveLesson] = useState(null);
-
-  const refreshProgress = () => setProgress(getProgress());
+export default function LearnScreen({ onStartLesson }) {
+  const [progress] = useState(() => getProgress());
 
   const nextSection = useMemo(() => {
     for (const mod of COURSE) {
@@ -116,33 +111,8 @@ export default function LearnScreen({ onScoreUpdate }) {
 
   const handleSectionClick = (mod, sec, status) => {
     if (status === 'locked') return;
-    setActiveLesson({ moduleId: mod.id, sectionId: sec.id, mod, sec });
+    onStartLesson?.(mod, sec);
   };
-
-  const handleLessonComplete = (passed, earnedScore) => {
-    if (passed && activeLesson) {
-      markSectionComplete(activeLesson.moduleId, activeLesson.sectionId);
-      // Sync to Supabase in background
-      const tid = localStorage.getItem('az_tg_id');
-      if (tid) saveProgress(tid, activeLesson.moduleId, activeLesson.sectionId);
-      refreshProgress();
-      if (onScoreUpdate && earnedScore > 0) onScoreUpdate(earnedScore);
-    }
-    setActiveLesson(null);
-  };
-
-  if (activeLesson) {
-    return (
-      <LessonScreen
-        moduleId={activeLesson.moduleId}
-        sectionId={activeLesson.sectionId}
-        mod={activeLesson.mod}
-        sec={activeLesson.sec}
-        onComplete={handleLessonComplete}
-        onClose={() => setActiveLesson(null)}
-      />
-    );
-  }
 
   return (
     <div className="learn-screen">
