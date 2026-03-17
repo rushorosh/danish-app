@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { generateLessons } from '../data/course.js';
+import { generateLessons, generateLessonsFromDB, TOPIC_MAP } from '../data/course.js';
 import { speakAzerbaijani } from '../utils/tts.js';
 import { recordActivity } from '../data/streak.js';
+import { addKnownWords } from '../data/wordProgress.js';
+import { fetchVocabulary, fetchSentencesByTopic } from '../data/api.js';
 import './LessonScreen.css';
 
 const TOTAL_LIVES = 5;
@@ -9,8 +11,22 @@ const TOTAL_LIVES = 5;
 function playAz(text) { speakAzerbaijani(text, 0.85); }
 
 export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete, onClose }) {
-  const lessons = useMemo(() => generateLessons(moduleId, sectionId), [moduleId, sectionId]);
+  const [lessons, setLessons] = useState(() => generateLessons(moduleId, sectionId));
   const [currentIdx, setCurrentIdx] = useState(0);
+
+  // Load from Supabase DB if available, replace static lessons
+  useEffect(() => {
+    const topic = TOPIC_MAP[String(moduleId)];
+    if (!topic) return;
+    Promise.all([
+      fetchVocabulary(topic, sectionId <= 2 ? 2 : 4),
+      fetchSentencesByTopic(topic, sectionId >= 4 ? 5 : 3),
+    ]).then(([dbWords, dbSentences]) => {
+      if (dbWords && dbWords.length >= 3) {
+        setLessons(generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences, dbWords));
+      }
+    }).catch(() => {});
+  }, [moduleId, sectionId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [lives, setLives] = useState(TOTAL_LIVES);
   const [score, setScore] = useState(0);
   const [phase, setPhase] = useState('question'); // 'question' | 'correct' | 'wrong'
@@ -53,26 +69,36 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete
     return [...distractors, correct].sort(() => Math.random() - 0.5);
   }, [currentIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const canCheck = lesson?.type === 'choice'
+  const canCheck = (lesson?.type === 'choice' || lesson?.type === 'sentence')
     ? !!selectedOption
     : lesson?.type === 'tiles'
     ? placedTiles.length > 0
     : false;
 
   const handleNext = useCallback(() => {
+    // Record introduced words to known vocabulary
+    if (lesson?.type === 'introduce') {
+      addKnownWords([lesson.word.az]);
+    }
     if (currentIdx + 1 >= total || lives <= 0) {
       recordActivity();
-      const passed = score / Math.max(total - lessons.filter(l => l.type === 'introduce').length, 1) >= 0.5 && lives > 0;
+      // Record all introduce words from this session
+      const introduceWords = lessons
+        .filter(l => l.type === 'introduce')
+        .map(l => l.word.az);
+      if (introduceWords.length) addKnownWords(introduceWords);
+      const testable = Math.max(total - lessons.filter(l => l.type === 'introduce').length, 1);
+      const passed = score / testable >= 0.5 && lives > 0;
       onComplete(passed, score * 2);
     } else {
       setCurrentIdx(i => i + 1);
     }
-  }, [currentIdx, total, lives, score, lessons, onComplete]);
+  }, [currentIdx, total, lives, score, lessons, lesson, onComplete]);
 
   const handleCheck = useCallback(() => {
     if (!lesson) return;
     let correct = false;
-    if (lesson.type === 'choice') {
+    if (lesson.type === 'choice' || lesson.type === 'sentence') {
       correct = selectedOption?.az === lesson.word.az || selectedOption?.ru === lesson.word.ru;
     } else if (lesson.type === 'tiles') {
       const answer = placedTiles.map(t => t.word).join(' ').toLowerCase().trim();
@@ -154,7 +180,11 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete
         <>
           {/* Task label */}
           <div className="lesson-task-label">
-            {lesson.type === 'choice' ? 'Выберите правильный перевод' : 'Переведите слово'}
+            {lesson.type === 'sentence'
+              ? 'Переведите предложение'
+              : lesson.type === 'choice'
+              ? 'Выберите правильный перевод'
+              : 'Переведите слово'}
           </div>
 
           {/* Character + word bubble */}
@@ -173,7 +203,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, onComplete
 
           {/* Answer area */}
           <div className="lesson-answer-area">
-            {lesson.type === 'choice' ? (
+            {(lesson.type === 'choice' || lesson.type === 'sentence') ? (
               <div className="lesson-options">
                 {choiceOptions.map((opt, i) => {
                   let cls = 'lesson-option';

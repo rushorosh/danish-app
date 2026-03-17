@@ -18,6 +18,96 @@ export function preloadRatings() {
   fetchLeaderboardPeriod('week');
 }
 
+// ─── Vocabulary ──────────────────────────────────────
+
+const VOC_CACHE_TTL = 30 * 60 * 1000; // 30 min
+
+/**
+ * Fetch vocabulary words from Supabase by topic and optional max level.
+ * Falls back to empty array if DB unavailable.
+ */
+export async function fetchVocabulary(topic, maxLevel = 4) {
+  const key = `voc_${topic}_${maxLevel}`;
+  const cached = cacheGet(key);
+  if (cached) return cached;
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('vocabulary')
+    .select('*')
+    .eq('topic', topic)
+    .lte('level', maxLevel)
+    .order('level', { ascending: true });
+  if (error) { console.warn('[api] fetchVocabulary:', error.message); return []; }
+  const result = data || [];
+  _cache[key] = { data: result, ts: Date.now() };
+  return result;
+}
+
+/**
+ * Fetch all vocabulary for preloading (no topic filter).
+ */
+export async function fetchAllVocabulary() {
+  const key = 'voc_all';
+  const cached = cacheGet(key);
+  if (cached) return cached;
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('vocabulary')
+    .select('*')
+    .order('topic', { ascending: true })
+    .order('level', { ascending: true });
+  if (error) { console.warn('[api] fetchAllVocabulary:', error.message); return []; }
+  const result = data || [];
+  _cache[key] = { data: result, ts: Date.now() };
+  return result;
+}
+
+/**
+ * Fetch sentences accessible to the user based on their known words.
+ * Returns sentences where ALL word_codes are in knownWords set.
+ * knownWords: Set<string> of lowercase az words
+ */
+export async function fetchAccessibleSentences(knownWords, maxLevel = 5) {
+  const key = `sent_${maxLevel}`;
+  let sentences = cacheGet(key);
+  if (!sentences) {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('sentences')
+      .select('*')
+      .lte('level', maxLevel)
+      .order('level', { ascending: true });
+    if (error) { console.warn('[api] fetchSentences:', error.message); return []; }
+    sentences = data || [];
+    _cache[key] = { data: sentences, ts: Date.now() };
+  }
+  // Filter: all key words must be known by user
+  return sentences.filter(s =>
+    !s.word_codes?.length ||
+    s.word_codes.every(w => knownWords.has(w.toLowerCase()))
+  );
+}
+
+/**
+ * Fetch sentences by topic for a lesson section.
+ */
+export async function fetchSentencesByTopic(topic, level = 5) {
+  const key = `sent_topic_${topic}_${level}`;
+  const cached = cacheGet(key);
+  if (cached) return cached;
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('sentences')
+    .select('*')
+    .eq('topic', topic)
+    .lte('level', level)
+    .order('level', { ascending: true });
+  if (error) { console.warn('[api] fetchSentencesByTopic:', error.message); return []; }
+  const result = data || [];
+  _cache[key] = { data: result, ts: Date.now() };
+  return result;
+}
+
 // ─── User ───────────────────────────────────────────
 
 /**

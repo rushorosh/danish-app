@@ -105,7 +105,7 @@ export const BONUS_MODULE = {
 };
 
 // Topic mapping per module
-const TOPIC_MAP = {
+export const TOPIC_MAP = {
   '1': 'greetings',
   '2': 'numbers',
   '3': 'daily',
@@ -126,36 +126,103 @@ const LESSON_PATTERN = [
   'choice',
 ];
 
+// Sentence lesson pattern (sections 4-5 get sentence exercises)
+const SENTENCE_PATTERN = [
+  'introduce', 'introduce',
+  'choice', 'tiles',
+  'sentence', 'choice',
+  'tiles', 'sentence',
+  'choice', 'sentence',
+];
+
+/**
+ * Generate lessons from a word pool (static fallback).
+ * pool: array of word objects { az, ru, transcription, ... }
+ * allWords: full word list for distractors
+ */
+export function buildLessons(pool, allWords, sectionId, withSentences = false) {
+  const pattern = withSentences ? SENTENCE_PATTERN : LESSON_PATTERN;
+  const offset = ((sectionId - 1) * 5) % Math.max(pool.length, 1);
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+  const words = rotated.slice(0, 5);
+  while (words.length < 3) words.push(...pool.slice(0, 3));
+
+  return pattern.map((type, i) => {
+    const word = words[i % words.length];
+    const distractors = allWords
+      .filter(w => w.az !== word.az && w.ru !== word.ru)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3);
+    return { id: i + 1, type, word, distractors };
+  });
+}
+
+/**
+ * Static lesson generation (used as fallback when DB unavailable).
+ */
 export function generateLessons(moduleId, sectionId) {
   const topic = TOPIC_MAP[String(moduleId)] || 'greetings';
   const topicWords = WORDS.filter(w => w.topic === topic);
 
-  // Progressive difficulty: sectionId 1-5
   let levels;
   if (sectionId === 1)      levels = [1];
   else if (sectionId === 2) levels = [1, 2];
   else if (sectionId === 3) levels = [2, 3];
   else if (sectionId === 4) levels = [3, 4];
-  else                      levels = [1, 2, 3, 4]; // section 5 = full review
+  else                      levels = [1, 2, 3, 4];
 
   const pool = topicWords.filter(w => levels.includes(w.level));
-  const fallback = topicWords.length > 0 ? topicWords : WORDS.slice(0, 8);
-  const source = pool.length >= 3 ? pool : fallback;
+  const source = pool.length >= 3 ? pool : topicWords;
+  const withSentences = sectionId >= 4;
+  return buildLessons(source, WORDS, sectionId, withSentences);
+}
 
-  // Rotate words per section to ensure variety
-  const offset = ((sectionId - 1) * 5) % source.length;
+/**
+ * Dynamic lesson generation from Supabase vocabulary.
+ * dbWords: words fetched from Supabase vocabulary table
+ * dbSentences: sentences fetched from Supabase sentences table (optional)
+ * allDbWords: full vocabulary for distractors
+ */
+export function generateLessonsFromDB(moduleId, sectionId, dbWords, dbSentences = [], allDbWords = []) {
+  let levels;
+  if (sectionId === 1)      levels = [1];
+  else if (sectionId === 2) levels = [1, 2];
+  else if (sectionId === 3) levels = [2, 3];
+  else if (sectionId === 4) levels = [3, 4];
+  else                      levels = [1, 2, 3, 4];
+
+  const pool = dbWords.filter(w => levels.includes(w.level));
+  const source = pool.length >= 3 ? pool : dbWords;
+  const distractorPool = allDbWords.length > 10 ? allDbWords : [...WORDS, ...allDbWords];
+  const withSentences = sectionId >= 4 && dbSentences.length > 0;
+
+  const offset = ((sectionId - 1) * 5) % Math.max(source.length, 1);
   const rotated = [...source.slice(offset), ...source.slice(0, offset)];
   const words = rotated.slice(0, 5);
-
-  // Ensure minimum 3 words
   while (words.length < 3) words.push(...source.slice(0, 3));
 
-  return LESSON_PATTERN.map((type, i) => {
+  const pattern = withSentences ? SENTENCE_PATTERN : LESSON_PATTERN;
+
+  return pattern.map((type, i) => {
+    if (type === 'sentence' && dbSentences.length > 0) {
+      const sent = dbSentences[i % dbSentences.length];
+      const distractors = distractorPool
+        .filter(w => w.az !== sent.az)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+      return {
+        id: i + 1,
+        type: 'sentence',
+        word: { az: sent.az, ru: sent.ru, transcription: sent.transcription || '' },
+        distractors,
+        pattern: sent.pattern,
+      };
+    }
     const word = words[i % words.length];
-    const distractors = WORDS
+    const distractors = distractorPool
       .filter(w => w.az !== word.az && w.ru !== word.ru)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3);
-    return { id: i + 1, type, word, distractors };
+    return { id: i + 1, type: type === 'sentence' ? 'choice' : type, word, distractors };
   });
 }
