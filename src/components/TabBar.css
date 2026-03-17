@@ -4,13 +4,12 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 66px;
   background: #fff;
   border-top: 1.5px solid var(--border-light);
   z-index: 200;
-  padding: 6px 8px;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
-  gap: 6px;
+  padding: 8px 4px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  gap: 2px;
   box-shadow: 0 -4px 20px rgba(108, 58, 237, 0.08);
 }
 
@@ -20,12 +19,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  border-radius: 12px;
+  gap: 2px;
+  border-radius: 10px;
   background: transparent;
   color: var(--text-secondary);
   transition: background 0.18s, color 0.18s, transform 0.12s;
-  padding: 6px 4px;
+  padding: 5px 2px;
+  min-width: 0;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -40,13 +40,17 @@
 }
 
 .tabbar__icon {
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1;
 }
 
 .tabbar__label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.2px;
+  letter-spacing: 0px;
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }

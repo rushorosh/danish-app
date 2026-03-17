@@ -42,10 +42,10 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
 
   const allTiles = useMemo(() => {
     if (!lesson || lesson.type !== 'tiles') return [];
-    const isParenthetical = w => /^\(.*\)$/.test(w.trim()) || w.trim() === '';
-    const correctWords = lesson.word.ru.split(' ').filter(w => !isParenthetical(w));
+    const cleanRu = (str) => str.replace(/\s*\([^)]*\)/g, '').replace(/\([^)]*\)\s*/g, '').trim();
+    const correctWords = cleanRu(lesson.word.ru).split(' ').filter(Boolean);
     const distractorWords = (lesson.distractors || [])
-      .flatMap(d => d.ru.split(' ').filter(w => !isParenthetical(w)))
+      .flatMap(d => cleanRu(d.ru).split(' ').filter(Boolean))
       .slice(0, 3);
     return [...correctWords, ...distractorWords]
       .slice(0, 6)
@@ -109,7 +109,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
       correct = selectedOption?.az === lesson.word.az || selectedOption?.ru === lesson.word.ru;
     } else if (lesson.type === 'tiles') {
       const answer = placedTiles.map(t => t.word).join(' ').toLowerCase().trim();
-      const expected = lesson.word.ru.toLowerCase().trim();
+      const expected = lesson.word.ru.replace(/\s*\([^)]*\)/g, '').replace(/\([^)]*\)\s*/g, '').trim().toLowerCase();
       correct = answer === expected || expected.includes(answer) || answer.includes(expected);
     }
     if (correct) {
