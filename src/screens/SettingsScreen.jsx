@@ -46,23 +46,16 @@ export default function SettingsScreen({ telegramId, onSettingsChange }) {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
 
-    // TG 7.0+ — native contact request dialog
-    if (typeof tg.requestContact === 'function') {
-      tg.requestContact((ok, contact) => {
-        if (ok && contact) {
-          if (contact.phone_number) setPhone(contact.phone_number);
-          const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ');
-          if (name) setDisplayName(name);
-        }
-      });
-      return;
-    }
-
-    // Fallback: fill from initDataUnsafe (no phone available this way)
+    // Fill name from initDataUnsafe immediately
     const u = tg.initDataUnsafe?.user;
     if (u) {
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ');
       if (name) setDisplayName(name);
+    }
+
+    // TG 7.0+ — show native contact dialog (phone goes to bot, not to mini app)
+    if (typeof tg.requestContact === 'function') {
+      tg.requestContact(() => {});
     }
   };
 
@@ -135,6 +128,7 @@ export default function SettingsScreen({ telegramId, onSettingsChange }) {
         <div className="settings-field">
           <label className="settings-field__label">{t('phone')}</label>
           <input className="settings-field__input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+7..." type="tel" />
+          <div className="settings-field__hint">Введите номер вручную</div>
         </div>
         <div className="settings-field">
           <label className="settings-field__label">{t('email')}</label>

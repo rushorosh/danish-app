@@ -123,6 +123,13 @@
   background: #fff;
 }
 
+.settings-field__hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  padding-left: 2px;
+}
+
 /* Save btn */
 .settings-save-btn {
   width: 100%;
