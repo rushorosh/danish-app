@@ -237,7 +237,7 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
     return result;
   }
 
-  // day or week — read from pre-aggregated table
+  // day or week — try pre-aggregated table first, fallback to score_events
   const table = period === 'day' ? 'scores_daily' : 'scores_weekly';
   const dateCol = period === 'day' ? 'day' : 'week_start';
   const dateVal = period === 'day'
@@ -252,7 +252,25 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
     .order('score', { ascending: false })
     .limit(50));
 
-  if (err1) { console.warn(`[api] fetchLeaderboard ${period}:`, err1.message); return null; }
+  // Fallback: таблица ещё не создана — читаем из score_events
+  if (err1) {
+    console.warn(`[api] ${period} table missing, fallback to score_events`);
+    const since = period === 'day'
+      ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: events, error: evErr } = await supabase
+      .from('score_events').select('telegram_id, points').gte('created_at', since);
+    if (evErr) { console.warn('[api] score_events fallback:', evErr.message); return []; }
+    const totals = {};
+    for (const e of events || []) {
+      const k = String(e.telegram_id);
+      totals[k] = (totals[k] || 0) + e.points;
+    }
+    scores = Object.entries(totals)
+      .map(([tid, score]) => ({ telegram_id: Number(tid), score }))
+      .sort((a, b) => b.score - a.score).slice(0, 50);
+  }
+
   if (!scores || scores.length === 0) { cacheSet(key, []); return []; }
 
   // Fetch user info for those IDs
@@ -262,7 +280,7 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
     .select('telegram_id, first_name, last_name, username')
     .in('telegram_id', ids);
 
-  if (err2) { console.warn(`[api] fetchLeaderboard ${period} users:`, err2.message); return null; }
+  if (err2) { console.warn(`[api] fetchLeaderboard ${period} users:`, err2.message); return []; }
 
   const userMap = Object.fromEntries((users || []).map(u => [String(u.telegram_id), u]));
   const result = scores.map(s => ({

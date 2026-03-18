@@ -45,6 +45,11 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
     const data = await fetchLeaderboard(p, forceRefresh);
     setBoard(mapUsers(data));
     setLoading(false);
+    // Refresh all-time top-1 banner on every load
+    fetchLeaderboard('all', forceRefresh).then(allData => {
+      const mapped = mapUsers(allData);
+      if (mapped.length > 0) setTopAllTime(mapped[0]);
+    });
   }, [mapUsers]);
 
   useEffect(() => { load(period, true); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
