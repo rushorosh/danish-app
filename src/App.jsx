@@ -11,7 +11,7 @@ import ListeningGame from './screens/ListeningGame';
 import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import { upsertUser, recordScore, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
+import { upsertUser, recordScore, fetchUserScore, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
 import { markNodeComplete, markSectionComplete, setProgressData, getProgress } from './data/progress.js';
 import VocabScreen from './screens/VocabScreen';
 import SRSReviewScreen from './screens/SRSReviewScreen';
@@ -65,11 +65,12 @@ export default function App() {
           username: u.username,
           firstName: u.first_name,
           lastName: u.last_name,
-        }).then(dbUser => {
-          if (dbUser && dbUser.score != null) {
-            setUserScore(dbUser.score);
-            localStorage.setItem('az_score', String(dbUser.score));
-          }
+        });
+
+        // Load score from score_events — always accurate regardless of RPC state
+        fetchUserScore(u.id).then(total => {
+          setUserScore(total);
+          localStorage.setItem('az_score', String(total));
         });
 
         loadProgress(u.id).then(dbProgress => {

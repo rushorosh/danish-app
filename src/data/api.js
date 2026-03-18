@@ -148,17 +148,25 @@ export async function upsertUser({ telegramId, username, firstName, lastName }) 
 }
 
 /**
- * Add points to all three score tables atomically via RPC.
- * This is the ONLY place where score is written.
+ * Record score: writes to score_events (guaranteed) + tries add_score RPC (best effort).
+ * score_events serves as the reliable fallback for leaderboards.
  */
 export async function recordScore(telegramId, points) {
   if (!supabase || !telegramId || !points) return;
-  const { error } = await supabase.rpc('add_score', {
-    p_tid: Number(telegramId),
-    p_points: points,
-  });
-  if (error) console.warn('[api] recordScore error:', error.message);
-  else invalidateRatingsCache();
+  const tid = Number(telegramId);
+
+  // Fire both in parallel — score_events is the reliable fallback
+  const [, rpcRes] = await Promise.all([
+    supabase.from('score_events').insert({
+      telegram_id: tid,
+      points,
+      created_at: new Date().toISOString(),
+    }),
+    supabase.rpc('add_score', { p_tid: tid, p_points: points }),
+  ]);
+
+  if (rpcRes.error) console.warn('[api] add_score RPC:', rpcRes.error.message);
+  invalidateRatingsCache();
 }
 
 // ─── Progress ────────────────────────────────────────
@@ -201,10 +209,20 @@ export async function saveProgress(telegramId, moduleId, sectionId) {
   if (error) console.warn('[api] saveProgress error:', error.message);
 }
 
-// ─── Score events (legacy — kept for referral bonus only) ────────────────────
+// ─── Score helpers ────────────────────────────────────
 export async function addScoreEvent(telegramId, points) {
-  // Route referral bonuses through the same RPC
   return recordScore(telegramId, points);
+}
+
+/** Get user's total score from score_events (source of truth for header). */
+export async function fetchUserScore(telegramId) {
+  if (!supabase || !telegramId) return 0;
+  const { data, error } = await supabase
+    .from('score_events')
+    .select('points')
+    .eq('telegram_id', Number(telegramId));
+  if (error) { console.warn('[api] fetchUserScore:', error.message); return 0; }
+  return (data || []).reduce((sum, e) => sum + (e.points || 0), 0);
 }
 
 // ─── Leaderboard ─────────────────────────────────────
