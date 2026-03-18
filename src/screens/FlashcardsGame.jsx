@@ -79,7 +79,8 @@ export default function FlashcardsGame({ onBack, onScoreUpdate }) {
   }, [currentIndex, score, isCorrect, onScoreUpdate]);
 
   const handleRestart = () => {
-    window.location.reload();
+    if (score > 0) onScoreUpdate && onScoreUpdate(score);
+    setTimeout(() => window.location.reload(), 500);
   };
 
   const handleDone = () => {

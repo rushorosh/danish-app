@@ -11,12 +11,6 @@ function cacheGet(key, ttl = RATING_TTL) {
 }
 function cacheSet(key, data) { _cache[key] = { data, ts: Date.now() }; }
 
-function getWeekStart() {
-  const d = new Date();
-  const diff = d.getDay() === 0 ? -6 : 1 - d.getDay(); // Monday
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().split('T')[0];
-}
 
 /** Preload all three leaderboard tabs on app start */
 export function preloadRatings() {
@@ -148,46 +142,25 @@ export async function upsertUser({ telegramId, username, firstName, lastName }) 
 }
 
 /**
- * Record score: writes to score_events (guaranteed) + tries add_score RPC (best effort).
- * score_events serves as the reliable fallback for leaderboards.
- */
-/**
- * Record score and return the new users.score from DB.
- * This is the single source of truth for the header and all-time leaderboard.
+ * Record score via add_score RPC (writes to scores_alltime, scores_daily, scores_weekly atomically).
+ * Returns the new all-time score from scores_alltime.
  */
 export async function recordScore(telegramId, points) {
   if (!supabase || !telegramId || !points) return null;
   const tid = Number(telegramId);
 
-  // 1. Always write to score_events (source of truth for day/week leaderboard)
-  await supabase.from('score_events').insert({
-    telegram_id: tid,
-    points,
-    created_at: new Date().toISOString(),
-  });
+  const { data: newScore, error: rpcErr } = await supabase.rpc('add_score', { p_tid: tid, p_points: points });
 
-  // 2. Try RPC to update users.score (all-time leaderboard)
-  const { error: rpcErr } = await supabase.rpc('add_score', { p_tid: tid, p_points: points });
-
-  // 3. If RPC failed — update users.score directly (safe: 1 session per user)
   if (rpcErr) {
-    console.warn('[api] add_score RPC failed, direct update:', rpcErr.message);
-    const { data: user } = await supabase
-      .from('users').select('score').eq('telegram_id', tid).single();
-    if (user != null) {
-      await supabase
-        .from('users')
-        .update({ score: (user.score || 0) + points })
-        .eq('telegram_id', tid);
-    }
+    console.warn('[api] add_score RPC failed:', rpcErr.message);
   }
 
   invalidateRatingsCache();
 
-  // 4. Return fresh users.score so header stays in sync with all-time leaderboard
+  // Return fresh alltime score from scores_alltime (same source as leaderboard)
   const { data: updated } = await supabase
-    .from('users').select('score').eq('telegram_id', tid).single();
-  return updated?.score ?? null;
+    .from('scores_alltime').select('score').eq('telegram_id', tid).single();
+  return updated?.score ?? (typeof newScore === 'number' ? newScore : null);
 }
 
 // ─── Progress ────────────────────────────────────────
@@ -251,7 +224,7 @@ export async function fetchUserScore(telegramId) {
 /**
  * Unified leaderboard fetch.
  * period: 'all' | 'day' | 'week'
- * Reads from pre-aggregated tables — no heavy aggregation at query time.
+ * Each period reads from its own pre-aggregated table (reset by pg_cron for day/week).
  */
 export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
   const key = `lb_${period}`;
@@ -261,45 +234,21 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
   }
   if (!supabase) return null;
 
-  let scores, err1;
+  const table = period === 'all' ? 'scores_alltime'
+    : period === 'day' ? 'scores_daily'
+    : 'scores_weekly';
 
-  if (period === 'all') {
-    ({ data: scores, error: err1 } = await supabase
-      .from('users')
-      .select('telegram_id, first_name, last_name, username, score')
-      .gt('score', 0)
-      .order('score', { ascending: false })
-      .limit(50));
-    if (err1) { console.warn('[api] fetchLeaderboard all:', err1.message); return null; }
-    const result = (scores || []);
-    cacheSet(key, result);
-    return result;
-  }
+  const { data: scores, error } = await supabase
+    .from(table)
+    .select('telegram_id, score')
+    .gt('score', 0)
+    .order('score', { ascending: false })
+    .limit(50);
 
-  // day or week — always read from score_events (always written, single source of truth)
-  const since = period === 'day'
-    ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-    : new Date(getWeekStart() + 'T00:00:00.000Z').toISOString();
-
-  const { data: events, error: evErr } = await supabase
-    .from('score_events')
-    .select('telegram_id, points')
-    .gte('created_at', since);
-
-  if (evErr) { console.warn(`[api] fetchLeaderboard ${period}:`, evErr.message); return null; }
-
-  const totals = {};
-  for (const e of events || []) {
-    const k = String(e.telegram_id);
-    totals[k] = (totals[k] || 0) + e.points;
-  }
-  scores = Object.entries(totals)
-    .map(([tid, score]) => ({ telegram_id: Number(tid), score }))
-    .sort((a, b) => b.score - a.score).slice(0, 50);
-
+  if (error) { console.warn(`[api] fetchLeaderboard ${period}:`, error.message); return null; }
   if (!scores || scores.length === 0) { cacheSet(key, []); return []; }
 
-  // Fetch user info for those IDs
+  // Fetch user display info
   const ids = scores.map(s => s.telegram_id);
   const { data: users, error: err2 } = await supabase
     .from('users')
