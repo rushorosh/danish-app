@@ -155,17 +155,29 @@ export async function recordScore(telegramId, points) {
   if (!supabase || !telegramId || !points) return;
   const tid = Number(telegramId);
 
-  // Fire both in parallel — score_events is the reliable fallback
-  const [, rpcRes] = await Promise.all([
-    supabase.from('score_events').insert({
-      telegram_id: tid,
-      points,
-      created_at: new Date().toISOString(),
-    }),
-    supabase.rpc('add_score', { p_tid: tid, p_points: points }),
-  ]);
+  // 1. Always write to score_events (source of truth for day/week leaderboard)
+  await supabase.from('score_events').insert({
+    telegram_id: tid,
+    points,
+    created_at: new Date().toISOString(),
+  });
 
-  if (rpcRes.error) console.warn('[api] add_score RPC:', rpcRes.error.message);
+  // 2. Try RPC to update users.score (all-time leaderboard)
+  const { error: rpcErr } = await supabase.rpc('add_score', { p_tid: tid, p_points: points });
+
+  // 3. If RPC failed — update users.score directly (read-modify-write, safe: 1 session per user)
+  if (rpcErr) {
+    console.warn('[api] add_score RPC failed, using direct update:', rpcErr.message);
+    const { data: user } = await supabase
+      .from('users').select('score').eq('telegram_id', tid).single();
+    if (user != null) {
+      await supabase
+        .from('users')
+        .update({ score: (user.score || 0) + points })
+        .eq('telegram_id', tid);
+    }
+  }
+
   invalidateRatingsCache();
 }
 
@@ -255,39 +267,26 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
     return result;
   }
 
-  // day or week — try pre-aggregated table first, fallback to score_events
-  const table = period === 'day' ? 'scores_daily' : 'scores_weekly';
-  const dateCol = period === 'day' ? 'day' : 'week_start';
-  const dateVal = period === 'day'
-    ? new Date().toISOString().split('T')[0]
-    : getWeekStart();
+  // day or week — always read from score_events (always written, single source of truth)
+  const since = period === 'day'
+    ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+    : new Date(getWeekStart() + 'T00:00:00.000Z').toISOString();
 
-  ({ data: scores, error: err1 } = await supabase
-    .from(table)
-    .select('telegram_id, score')
-    .eq(dateCol, dateVal)
-    .gt('score', 0)
-    .order('score', { ascending: false })
-    .limit(50));
+  const { data: events, error: evErr } = await supabase
+    .from('score_events')
+    .select('telegram_id, points')
+    .gte('created_at', since);
 
-  // Fallback: таблица не создана ИЛИ пустая — читаем из score_events
-  if (err1 || !scores || scores.length === 0) {
-    console.warn(`[api] ${period} table missing, fallback to score_events`);
-    const since = period === 'day'
-      ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: events, error: evErr } = await supabase
-      .from('score_events').select('telegram_id, points').gte('created_at', since);
-    if (evErr) { console.warn('[api] score_events fallback:', evErr.message); return []; }
-    const totals = {};
-    for (const e of events || []) {
-      const k = String(e.telegram_id);
-      totals[k] = (totals[k] || 0) + e.points;
-    }
-    scores = Object.entries(totals)
-      .map(([tid, score]) => ({ telegram_id: Number(tid), score }))
-      .sort((a, b) => b.score - a.score).slice(0, 50);
+  if (evErr) { console.warn(`[api] fetchLeaderboard ${period}:`, evErr.message); return null; }
+
+  const totals = {};
+  for (const e of events || []) {
+    const k = String(e.telegram_id);
+    totals[k] = (totals[k] || 0) + e.points;
   }
+  scores = Object.entries(totals)
+    .map(([tid, score]) => ({ telegram_id: Number(tid), score }))
+    .sort((a, b) => b.score - a.score).slice(0, 50);
 
   if (!scores || scores.length === 0) { cacheSet(key, []); return []; }
 
