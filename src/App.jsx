@@ -105,13 +105,25 @@ export default function App() {
 
   const addScore = useCallback((points) => {
     if (!points || points <= 0) return;
+    // Optimistic update for instant feedback
     setUserScore(prev => {
       const n = prev + points;
       localStorage.setItem('az_score', String(n));
       return n;
     });
     const tid = localStorage.getItem('az_tg_id');
-    if (tid) recordScore(tid, points);
+    if (tid) {
+      // After DB write, sync header with actual users.score (same source as all-time leaderboard)
+      recordScore(tid, points).then(dbScore => {
+        if (dbScore != null) {
+          setUserScore(prev => {
+            const result = Math.max(prev, dbScore);
+            localStorage.setItem('az_score', String(result));
+            return result;
+          });
+        }
+      });
+    }
   }, []);
 
   const handleTabChange = useCallback((tab) => {

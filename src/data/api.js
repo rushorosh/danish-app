@@ -151,8 +151,12 @@ export async function upsertUser({ telegramId, username, firstName, lastName }) 
  * Record score: writes to score_events (guaranteed) + tries add_score RPC (best effort).
  * score_events serves as the reliable fallback for leaderboards.
  */
+/**
+ * Record score and return the new users.score from DB.
+ * This is the single source of truth for the header and all-time leaderboard.
+ */
 export async function recordScore(telegramId, points) {
-  if (!supabase || !telegramId || !points) return;
+  if (!supabase || !telegramId || !points) return null;
   const tid = Number(telegramId);
 
   // 1. Always write to score_events (source of truth for day/week leaderboard)
@@ -165,9 +169,9 @@ export async function recordScore(telegramId, points) {
   // 2. Try RPC to update users.score (all-time leaderboard)
   const { error: rpcErr } = await supabase.rpc('add_score', { p_tid: tid, p_points: points });
 
-  // 3. If RPC failed — update users.score directly (read-modify-write, safe: 1 session per user)
+  // 3. If RPC failed — update users.score directly (safe: 1 session per user)
   if (rpcErr) {
-    console.warn('[api] add_score RPC failed, using direct update:', rpcErr.message);
+    console.warn('[api] add_score RPC failed, direct update:', rpcErr.message);
     const { data: user } = await supabase
       .from('users').select('score').eq('telegram_id', tid).single();
     if (user != null) {
@@ -179,6 +183,11 @@ export async function recordScore(telegramId, points) {
   }
 
   invalidateRatingsCache();
+
+  // 4. Return fresh users.score so header stays in sync with all-time leaderboard
+  const { data: updated } = await supabase
+    .from('users').select('score').eq('telegram_id', tid).single();
+  return updated?.score ?? null;
 }
 
 // ─── Progress ────────────────────────────────────────

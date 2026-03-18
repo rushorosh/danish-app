@@ -55,6 +55,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
   useEffect(() => { load(period, true); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const myPosition = board ? board.findIndex(u => u.isMe) : -1;
+  const myPeriodScore = myPosition >= 0 ? board[myPosition].score : null;
   const top3 = board ? board.slice(0, 3) : [];
   const rest = board ? board.slice(3) : [];
   const podiumOrder = [1, 0, 2];
@@ -110,7 +111,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         <div className="rating-screen__my-position">
           <span className="rating-screen__my-pos-label">{t('my_pos')}</span>
           <span className="rating-screen__my-pos-rank">#{myPosition + 1}</span>
-          <span className="rating-screen__my-pos-score">⭐ {userScore}</span>
+          <span className="rating-screen__my-pos-score">⭐ {myPeriodScore ?? userScore}</span>
         </div>
       )}
 
