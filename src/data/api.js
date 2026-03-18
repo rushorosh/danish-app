@@ -270,8 +270,8 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
     .order('score', { ascending: false })
     .limit(50));
 
-  // Fallback: таблица ещё не создана — читаем из score_events
-  if (err1) {
+  // Fallback: таблица не создана ИЛИ пустая — читаем из score_events
+  if (err1 || !scores || scores.length === 0) {
     console.warn(`[api] ${period} table missing, fallback to score_events`);
     const since = period === 'day'
       ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()

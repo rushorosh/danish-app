@@ -67,10 +67,13 @@ export default function App() {
           lastName: u.last_name,
         });
 
-        // Load score from score_events — always accurate regardless of RPC state
+        // Load score from score_events — use Math.max so in-progress game score isn't overwritten
         fetchUserScore(u.id).then(total => {
-          setUserScore(total);
-          localStorage.setItem('az_score', String(total));
+          setUserScore(prev => {
+            const result = Math.max(prev, total);
+            localStorage.setItem('az_score', String(result));
+            return result;
+          });
         });
 
         loadProgress(u.id).then(dbProgress => {
