@@ -1,21 +1,34 @@
 import { supabase } from '../lib/supabase.js';
 
-// ─── Rating cache ────────────────────────────────────
+// ─── Cache ───────────────────────────────────────────
 const _cache = {};
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const RATING_TTL = 30 * 1000;      // 30 sec for leaderboards
 
-function cacheGet(key) {
+function cacheGet(key, ttl = RATING_TTL) {
   const entry = _cache[key];
-  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
+  if (entry && Date.now() - entry.ts < ttl) return entry.data;
   return null;
 }
 function cacheSet(key, data) { _cache[key] = { data, ts: Date.now() }; }
 
-/** Call on app start to warm rating cache in background */
+function getWeekStart() {
+  const d = new Date();
+  const diff = d.getDay() === 0 ? -6 : 1 - d.getDay(); // Monday
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
+/** Preload all three leaderboard tabs on app start */
 export function preloadRatings() {
-  fetchLeaderboard();
-  fetchLeaderboardPeriod('day');
-  fetchLeaderboardPeriod('week');
+  fetchLeaderboard('all');
+  fetchLeaderboard('day');
+  fetchLeaderboard('week');
+}
+
+export function invalidateRatingsCache() {
+  delete _cache['lb_all'];
+  delete _cache['lb_day'];
+  delete _cache['lb_week'];
 }
 
 // ─── Vocabulary ──────────────────────────────────────
@@ -135,15 +148,16 @@ export async function upsertUser({ telegramId, username, firstName, lastName }) 
 }
 
 /**
- * Update user score in DB.
+ * Add points to all three score tables atomically via RPC.
+ * This is the ONLY place where score is written.
  */
-export async function updateScore(telegramId, score) {
-  if (!supabase || !telegramId) return;
-  const { error } = await supabase
-    .from('users')
-    .update({ score, updated_at: new Date().toISOString() })
-    .eq('telegram_id', telegramId);
-  if (error) console.warn('[api] updateScore error:', error.message);
+export async function recordScore(telegramId, points) {
+  if (!supabase || !telegramId || !points) return;
+  const { error } = await supabase.rpc('add_score', {
+    p_tid: Number(telegramId),
+    p_points: points,
+  });
+  if (error) console.warn('[api] recordScore error:', error.message);
   else invalidateRatingsCache();
 }
 
@@ -187,147 +201,82 @@ export async function saveProgress(telegramId, moduleId, sectionId) {
   if (error) console.warn('[api] saveProgress error:', error.message);
 }
 
-// ─── Score events ─────────────────────────────────────
-
-/**
- * Log a score event (called every time user earns points).
- */
+// ─── Score events (legacy — kept for referral bonus only) ────────────────────
 export async function addScoreEvent(telegramId, points) {
-  if (!supabase || !telegramId || !points) return;
-  const { error } = await supabase.from('score_events').insert({
-    telegram_id: telegramId,
-    points,
-    created_at: new Date().toISOString(),
-  });
-  if (error) console.warn('[api] addScoreEvent error:', error.message);
+  // Route referral bonuses through the same RPC
+  return recordScore(telegramId, points);
 }
 
 // ─── Leaderboard ─────────────────────────────────────
 
-export function invalidateRatingsCache() {
-  delete _cache['all'];
-  delete _cache['day'];
-  delete _cache['week'];
-}
-
 /**
- * Fetch top-50 users by score (all time).
- * Uses sum of score_events — same source as day/week to stay consistent.
+ * Unified leaderboard fetch.
+ * period: 'all' | 'day' | 'week'
+ * Reads from pre-aggregated tables — no heavy aggregation at query time.
  */
-export async function fetchLeaderboard(forceRefresh = false) {
+export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
+  const key = `lb_${period}`;
   if (!forceRefresh) {
-    const cached = cacheGet('all');
+    const cached = cacheGet(key);
     if (cached) return cached;
   }
   if (!supabase) return null;
 
-  const { data: events, error } = await supabase
-    .from('score_events')
-    .select('telegram_id, points');
-  if (error) {
-    console.warn('[api] fetchLeaderboard events error:', error.message);
-    return null;
+  let scores, err1;
+
+  if (period === 'all') {
+    ({ data: scores, error: err1 } = await supabase
+      .from('users')
+      .select('telegram_id, first_name, last_name, username, score')
+      .gt('score', 0)
+      .order('score', { ascending: false })
+      .limit(50));
+    if (err1) { console.warn('[api] fetchLeaderboard all:', err1.message); return null; }
+    const result = (scores || []);
+    cacheSet(key, result);
+    return result;
   }
 
-  const totals = {};
-  for (const e of events || []) {
-    const key = String(e.telegram_id);
-    totals[key] = (totals[key] || 0) + e.points;
-  }
+  // day or week — read from pre-aggregated table
+  const table = period === 'day' ? 'scores_daily' : 'scores_weekly';
+  const dateCol = period === 'day' ? 'day' : 'week_start';
+  const dateVal = period === 'day'
+    ? new Date().toISOString().split('T')[0]
+    : getWeekStart();
 
-  const ids = Object.keys(totals).map(Number);
-  if (!ids.length) { cacheSet('all', []); return []; }
+  ({ data: scores, error: err1 } = await supabase
+    .from(table)
+    .select('telegram_id, score')
+    .eq(dateCol, dateVal)
+    .gt('score', 0)
+    .order('score', { ascending: false })
+    .limit(50));
 
+  if (err1) { console.warn(`[api] fetchLeaderboard ${period}:`, err1.message); return null; }
+  if (!scores || scores.length === 0) { cacheSet(key, []); return []; }
+
+  // Fetch user info for those IDs
+  const ids = scores.map(s => s.telegram_id);
   const { data: users, error: err2 } = await supabase
     .from('users')
     .select('telegram_id, first_name, last_name, username')
     .in('telegram_id', ids);
-  if (err2) {
-    console.warn('[api] fetchLeaderboard users error:', err2.message);
-    return null;
-  }
 
-  const result = (users || [])
-    .map(u => ({ ...u, score: totals[String(u.telegram_id)] || 0 }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 50);
-  cacheSet('all', result);
+  if (err2) { console.warn(`[api] fetchLeaderboard ${period} users:`, err2.message); return null; }
+
+  const userMap = Object.fromEntries((users || []).map(u => [String(u.telegram_id), u]));
+  const result = scores.map(s => ({
+    ...userMap[String(s.telegram_id)],
+    telegram_id: s.telegram_id,
+    score: s.score,
+  }));
+  cacheSet(key, result);
   return result;
 }
 
-/**
- * Fetch total score for a single user from score_events.
- */
-export async function fetchUserScore(telegramId) {
-  if (!supabase || !telegramId) return 0;
-  const { data, error } = await supabase
-    .from('score_events')
-    .select('points')
-    .eq('telegram_id', telegramId);
-  if (error) { console.warn('[api] fetchUserScore error:', error.message); return 0; }
-  return (data || []).reduce((sum, e) => sum + (e.points || 0), 0);
-}
-
-/**
- * Fetch leaderboard for a time period.
- * period: 'week' | 'day'
- */
+/** @deprecated use fetchLeaderboard('day'|'week') */
 export async function fetchLeaderboardPeriod(period, forceRefresh = false) {
-  if (!forceRefresh) {
-    const cached = cacheGet(period);
-    if (cached) return cached;
-  }
-  if (!supabase) return null;
-  const now = new Date();
-  let since;
-  if (period === 'day') {
-    since = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  } else if (period === 'week') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 7);
-    since = d.toISOString();
-  } else {
-    return fetchLeaderboard();
-  }
-
-  // Fetch score events for the period
-  const { data: events, error } = await supabase
-    .from('score_events')
-    .select('telegram_id, points')
-    .gte('created_at', since);
-
-  if (error) {
-    console.warn('[api] fetchLeaderboardPeriod error:', error.message, '— falling back to all-time');
-    return fetchLeaderboard();
-  }
-
-  if (!events || events.length === 0) return [];
-
-  // Aggregate points by user
-  const totals = {};
-  for (const e of events) {
-    const key = String(e.telegram_id);
-    totals[key] = (totals[key] || 0) + e.points;
-  }
-
-  // Fetch user info for aggregated IDs
-  const ids = Object.keys(totals).map(Number);
-  const { data: users, error: err2 } = await supabase
-    .from('users')
-    .select('telegram_id, first_name, last_name, username')
-    .in('telegram_id', ids);
-
-  if (err2) {
-    console.warn('[api] fetchLeaderboardPeriod users error:', err2.message);
-    return fetchLeaderboard();
-  }
-
-  const result = (users || [])
-    .map(u => ({ ...u, score: totals[String(u.telegram_id)] || 0 }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 50);
-  cacheSet(period, result);
-  return result;
+  return fetchLeaderboard(period, forceRefresh);
 }
 
 // ─── Profile ──────────────────────────────────────────

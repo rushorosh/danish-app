@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { fetchLeaderboard, fetchLeaderboardPeriod, invalidateRatingsCache } from '../data/api.js';
+import { fetchLeaderboard, invalidateRatingsCache } from '../data/api.js';
 import { useT } from '../data/LanguageContext.jsx';
 import './RatingScreen.css';
 
@@ -33,7 +33,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
 
   // Always load all-time top-1 for the sticky banner
   useEffect(() => {
-    fetchLeaderboard().then(data => {
+    fetchLeaderboard('all').then(data => {
       const mapped = mapUsers(data);
       if (mapped.length > 0) setTopAllTime(mapped[0]);
     });
@@ -42,9 +42,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
   const load = useCallback(async (p, forceRefresh = false) => {
     setLoading(true);
     setBoard(null);
-    const data = p === 'all'
-      ? await fetchLeaderboard(forceRefresh)
-      : await fetchLeaderboardPeriod(p, forceRefresh);
+    const data = await fetchLeaderboard(p, forceRefresh);
     setBoard(mapUsers(data));
     setLoading(false);
   }, [mapUsers]);

@@ -11,7 +11,7 @@ import ListeningGame from './screens/ListeningGame';
 import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import { upsertUser, addScoreEvent, fetchUserScore, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
+import { upsertUser, recordScore, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
 import { markNodeComplete, markSectionComplete, setProgressData, getProgress } from './data/progress.js';
 import VocabScreen from './screens/VocabScreen';
 import SRSReviewScreen from './screens/SRSReviewScreen';
@@ -65,12 +65,11 @@ export default function App() {
           username: u.username,
           firstName: u.first_name,
           lastName: u.last_name,
-        });
-
-        // Load actual score from score_events (single source of truth)
-        fetchUserScore(u.id).then(total => {
-          setUserScore(total);
-          localStorage.setItem('az_score', String(total));
+        }).then(dbUser => {
+          if (dbUser && dbUser.score != null) {
+            setUserScore(dbUser.score);
+            localStorage.setItem('az_score', String(dbUser.score));
+          }
         });
 
         loadProgress(u.id).then(dbProgress => {
@@ -105,8 +104,8 @@ export default function App() {
       const newScore = prev + points;
       localStorage.setItem('az_score', String(newScore));
       const tid = localStorage.getItem('az_tg_id');
-      // Write to score_events immediately — this is the single source of truth
-      if (tid) addScoreEvent(tid, points);
+      // Atomic write to all three score tables via RPC
+      if (tid) recordScore(tid, points);
       return newScore;
     });
   }, []);
