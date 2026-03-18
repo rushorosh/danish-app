@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LanguageContext } from './data/LanguageContext.jsx';
 import { getSettings, saveSettings } from './data/settings.js';
 import ProgressHeader from './components/ProgressHeader';
@@ -11,7 +11,7 @@ import ListeningGame from './screens/ListeningGame';
 import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
+import { upsertUser, addScoreEvent, fetchUserScore, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
 import { markNodeComplete, markSectionComplete, setProgressData, getProgress } from './data/progress.js';
 import VocabScreen from './screens/VocabScreen';
 import SRSReviewScreen from './screens/SRSReviewScreen';
@@ -41,8 +41,6 @@ export default function App() {
     localStorage.getItem('az_tg_id') || null
   );
 
-  const scoreDebounce = useRef(null);
-
   // Preload ratings in background on startup
   useEffect(() => { preloadRatings(); }, []);
 
@@ -67,12 +65,12 @@ export default function App() {
           username: u.username,
           firstName: u.first_name,
           lastName: u.last_name,
-        }).then(dbUser => {
-          if (dbUser) {
-            const dbScore = dbUser.score ?? 0;
-            setUserScore(dbScore);
-            localStorage.setItem('az_score', String(dbScore));
-          }
+        });
+
+        // Load actual score from score_events (single source of truth)
+        fetchUserScore(u.id).then(total => {
+          setUserScore(total);
+          localStorage.setItem('az_score', String(total));
         });
 
         loadProgress(u.id).then(dbProgress => {
@@ -107,11 +105,8 @@ export default function App() {
       const newScore = prev + points;
       localStorage.setItem('az_score', String(newScore));
       const tid = localStorage.getItem('az_tg_id');
+      // Write to score_events immediately — this is the single source of truth
       if (tid) addScoreEvent(tid, points);
-      if (scoreDebounce.current) clearTimeout(scoreDebounce.current);
-      scoreDebounce.current = setTimeout(() => {
-        if (tid) updateScore(tid, newScore);
-      }, 2000);
       return newScore;
     });
   }, []);

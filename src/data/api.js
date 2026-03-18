@@ -212,6 +212,7 @@ export function invalidateRatingsCache() {
 
 /**
  * Fetch top-50 users by score (all time).
+ * Uses sum of score_events — same source as day/week to stay consistent.
  */
 export async function fetchLeaderboard(forceRefresh = false) {
   if (!forceRefresh) {
@@ -219,18 +220,52 @@ export async function fetchLeaderboard(forceRefresh = false) {
     if (cached) return cached;
   }
   if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('users')
-    .select('telegram_id, first_name, last_name, username, score')
-    .order('score', { ascending: false })
-    .limit(50);
+
+  const { data: events, error } = await supabase
+    .from('score_events')
+    .select('telegram_id, points');
   if (error) {
-    console.warn('[api] fetchLeaderboard error:', error.message);
+    console.warn('[api] fetchLeaderboard events error:', error.message);
     return null;
   }
-  const result = data || [];
+
+  const totals = {};
+  for (const e of events || []) {
+    const key = String(e.telegram_id);
+    totals[key] = (totals[key] || 0) + e.points;
+  }
+
+  const ids = Object.keys(totals).map(Number);
+  if (!ids.length) { cacheSet('all', []); return []; }
+
+  const { data: users, error: err2 } = await supabase
+    .from('users')
+    .select('telegram_id, first_name, last_name, username')
+    .in('telegram_id', ids);
+  if (err2) {
+    console.warn('[api] fetchLeaderboard users error:', err2.message);
+    return null;
+  }
+
+  const result = (users || [])
+    .map(u => ({ ...u, score: totals[String(u.telegram_id)] || 0 }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50);
   cacheSet('all', result);
   return result;
+}
+
+/**
+ * Fetch total score for a single user from score_events.
+ */
+export async function fetchUserScore(telegramId) {
+  if (!supabase || !telegramId) return 0;
+  const { data, error } = await supabase
+    .from('score_events')
+    .select('points')
+    .eq('telegram_id', telegramId);
+  if (error) { console.warn('[api] fetchUserScore error:', error.message); return 0; }
+  return (data || []).reduce((sum, e) => sum + (e.points || 0), 0);
 }
 
 /**
