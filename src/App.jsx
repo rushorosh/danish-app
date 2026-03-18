@@ -12,7 +12,7 @@ import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import { upsertUser, updateScore, addScoreEvent, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
-import { markNodeComplete, markSectionComplete, setProgressData } from './data/progress.js';
+import { markNodeComplete, markSectionComplete, setProgressData, getProgress } from './data/progress.js';
 import VocabScreen from './screens/VocabScreen';
 import SRSReviewScreen from './screens/SRSReviewScreen';
 import './App.css';
@@ -77,8 +77,10 @@ export default function App() {
 
         loadProgress(u.id).then(dbProgress => {
           if (dbProgress !== null) {
-            localStorage.setItem('az_progress', JSON.stringify(dbProgress));
-            setProgressData(dbProgress);
+            // Merge: local node-level keys + DB section-level keys (DB wins for sections)
+            const local = getProgress();
+            const merged = { ...local, ...dbProgress };
+            setProgressData(merged);
             setProgressVersion(v => v + 1);
           }
         });
