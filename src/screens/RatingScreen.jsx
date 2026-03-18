@@ -47,7 +47,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
     setLoading(false);
   }, [mapUsers]);
 
-  useEffect(() => { load(period); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(period, true); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const myPosition = board ? board.findIndex(u => u.isMe) : -1;
   const top3 = board ? board.slice(0, 3) : [];

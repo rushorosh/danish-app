@@ -96,7 +96,7 @@ export default function LessonScreen({ moduleId, sectionId, mod, sec, nodeIdx, o
       }
       const testable = Math.max(total - lessons.filter(l => l.type === 'introduce').length, 1);
       const passed = score / testable >= 0.5 && lives > 0;
-      onComplete(passed, score * 2);
+      onComplete(passed, score);
     } else {
       setCurrentIdx(i => i + 1);
     }
