@@ -100,14 +100,14 @@ export default function App() {
   }, []);
 
   const addScore = useCallback((points) => {
+    if (!points || points <= 0) return;
     setUserScore(prev => {
-      const newScore = prev + points;
-      localStorage.setItem('az_score', String(newScore));
-      const tid = localStorage.getItem('az_tg_id');
-      // Atomic write to all three score tables via RPC
-      if (tid) recordScore(tid, points);
-      return newScore;
+      const n = prev + points;
+      localStorage.setItem('az_score', String(n));
+      return n;
     });
+    const tid = localStorage.getItem('az_tg_id');
+    if (tid) recordScore(tid, points);
   }, []);
 
   const handleTabChange = useCallback((tab) => {

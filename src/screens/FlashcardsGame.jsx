@@ -70,7 +70,6 @@ export default function FlashcardsGame({ onBack, onScoreUpdate }) {
   const handleContinue = useCallback(() => {
     if (currentIndex + 1 >= TOTAL) {
       setFinished(true);
-      onScoreUpdate && onScoreUpdate(score + (isCorrect ? 0 : 0));
     } else {
       setCurrentIndex(i => i + 1);
       setSelectedAnswer(null);

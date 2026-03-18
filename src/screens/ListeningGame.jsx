@@ -63,7 +63,6 @@ export default function ListeningGame({ onBack, onScoreUpdate }) {
   const handleNext = useCallback(() => {
     if (currentIndex + 1 >= TOTAL) {
       setFinished(true);
-      onScoreUpdate?.(score + (phase === 'correct' ? 0 : 0));
     } else {
       setCurrentIndex(i => i + 1);
       setSelected(null);
