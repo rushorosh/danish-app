@@ -27,6 +27,7 @@ function pickAvatar(id) {
 export default function App() {
   const [activeTab, setActiveTab] = useState('learn');
   const [activeGame, setActiveGame] = useState(null);
+  const [gameKey, setGameKey] = useState(0);
   const [activeLesson, setActiveLesson] = useState(null);
   const [progressVersion, setProgressVersion] = useState(0);
   const [language, setLanguage] = useState(() => getSettings().language);
@@ -181,7 +182,12 @@ export default function App() {
   if (activeGame === 'flashcards') {
     return (
       <LanguageContext.Provider value={language}>
-        <FlashcardsGame onBack={() => setActiveGame(null)} onScoreUpdate={handleScoreUpdate} />
+        <FlashcardsGame
+          key={gameKey}
+          onBack={() => setActiveGame(null)}
+          onScoreUpdate={handleScoreUpdate}
+          onRestart={() => setGameKey(k => k + 1)}
+        />
       </LanguageContext.Provider>
     );
   }

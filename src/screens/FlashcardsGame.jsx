@@ -23,7 +23,7 @@ function buildOptions(correct, allWords) {
   return shuffle([correct, ...shuffledWrong]);
 }
 
-export default function FlashcardsGame({ onBack, onScoreUpdate }) {
+export default function FlashcardsGame({ onBack, onScoreUpdate, onRestart }) {
   const [gameWords] = useState(() => pickGameWords());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -79,8 +79,8 @@ export default function FlashcardsGame({ onBack, onScoreUpdate }) {
   }, [currentIndex, score, isCorrect, onScoreUpdate]);
 
   const handleRestart = () => {
-    if (score > 0) onScoreUpdate && onScoreUpdate(score);
-    setTimeout(() => window.location.reload(), 500);
+    if (score > 0) onScoreUpdate?.(score);
+    onRestart?.();
   };
 
   const handleDone = () => {
