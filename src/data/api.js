@@ -297,6 +297,35 @@ export async function updateUserProfile(telegramId, { phone, email, displayName 
   if (error) console.warn('[api] updateUserProfile error:', error.message);
 }
 
+// ─── User data sync (cross-device) ───────────────────
+
+/**
+ * Save all local user data to DB for cross-device sync.
+ * data: { srs, knownWords, streak, settings, progress }
+ */
+export async function saveUserData(telegramId, data) {
+  if (!supabase || !telegramId) return;
+  const { error } = await supabase
+    .from('users')
+    .update({ user_data: data })
+    .eq('telegram_id', Number(telegramId));
+  if (error) console.warn('[api] saveUserData:', error.message);
+}
+
+/**
+ * Load user_data blob from DB. Returns null on failure.
+ */
+export async function loadUserData(telegramId) {
+  if (!supabase || !telegramId) return null;
+  const { data, error } = await supabase
+    .from('users')
+    .select('user_data')
+    .eq('telegram_id', Number(telegramId))
+    .single();
+  if (error) { console.warn('[api] loadUserData:', error.message); return null; }
+  return data?.user_data || null;
+}
+
 // ─── Referrals ────────────────────────────────────────
 
 export async function addReferral(referrerId, refereeId) {

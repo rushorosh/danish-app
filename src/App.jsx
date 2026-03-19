@@ -11,7 +11,7 @@ import ListeningGame from './screens/ListeningGame';
 import LessonScreen from './screens/LessonScreen';
 import RatingScreen from './screens/RatingScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import { upsertUser, recordScore, loadProgress, addReferral, saveProgress, preloadRatings } from './data/api.js';
+import { upsertUser, recordScore, loadProgress, addReferral, saveProgress, preloadRatings, saveUserData, loadUserData } from './data/api.js';
 import { markNodeComplete, markSectionComplete, setProgressData, getProgress } from './data/progress.js';
 import VocabScreen from './screens/VocabScreen';
 import SRSReviewScreen from './screens/SRSReviewScreen';
@@ -22,6 +22,64 @@ const TABS = ['translate', 'learn', 'vocab', 'games', 'rating', 'settings'];
 const AVATARS = ['🦊','🐺','🦋','🦁','🐸','🦅','🐬','🦉','🐝','🏆'];
 function pickAvatar(id) {
   return AVATARS[Math.abs(Number(id) || 0) % AVATARS.length];
+}
+
+// ─── Cross-device sync helpers ────────────────────────
+
+function gatherLocalData() {
+  const parse = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || fallback); } catch { return JSON.parse(fallback); } };
+  return {
+    srs: parse('az_srs', '{}'),
+    knownWords: parse('az_known_words', '[]'),
+    streak: {
+      count: parseInt(localStorage.getItem('az_streak_count') || '0'),
+      date: localStorage.getItem('az_streak_date') || '',
+    },
+    settings: parse('az_settings', '{}'),
+    progress: parse('az_progress', '{}'),
+  };
+}
+
+function mergeUserData(dbData) {
+  if (!dbData) return;
+
+  // SRS: merge per word, keep the entry with higher box level
+  if (dbData.srs && Object.keys(dbData.srs).length) {
+    const local = (() => { try { return JSON.parse(localStorage.getItem('az_srs') || '{}'); } catch { return {}; } })();
+    const merged = { ...dbData.srs };
+    for (const [key, entry] of Object.entries(local)) {
+      if (!merged[key] || entry.box > merged[key].box) merged[key] = entry;
+    }
+    localStorage.setItem('az_srs', JSON.stringify(merged));
+  }
+
+  // Known words: union of both sets
+  if (dbData.knownWords?.length) {
+    const localSet = new Set((() => { try { return JSON.parse(localStorage.getItem('az_known_words') || '[]'); } catch { return []; } })());
+    dbData.knownWords.forEach(w => localSet.add(w));
+    localStorage.setItem('az_known_words', JSON.stringify([...localSet]));
+  }
+
+  // Streak: take the more recent date
+  if (dbData.streak?.date) {
+    const localDate = localStorage.getItem('az_streak_date') || '';
+    if (dbData.streak.date > localDate) {
+      localStorage.setItem('az_streak_date', dbData.streak.date);
+      localStorage.setItem('az_streak_count', String(dbData.streak.count || 0));
+    }
+  }
+
+  // Settings: apply language from DB only if not set locally
+  if (dbData.settings?.language) {
+    const local = (() => { try { return JSON.parse(localStorage.getItem('az_settings') || '{}'); } catch { return {}; } })();
+    if (!local.language) localStorage.setItem('az_settings', JSON.stringify({ ...local, ...dbData.settings }));
+  }
+
+  // Progress: merge (DB + local, local wins on conflict)
+  if (dbData.progress && Object.keys(dbData.progress).length) {
+    const local = (() => { try { return JSON.parse(localStorage.getItem('az_progress') || '{}'); } catch { return {}; } })();
+    localStorage.setItem('az_progress', JSON.stringify({ ...dbData.progress, ...local }));
+  }
 }
 
 export default function App() {
@@ -87,6 +145,14 @@ export default function App() {
           }
         });
 
+        // Cross-device sync: restore SRS, known words, streak, settings from DB
+        loadUserData(u.id).then(dbData => {
+          if (dbData) {
+            mergeUserData(dbData);
+            setProgressVersion(v => v + 1); // re-render learn screen with restored progress
+          }
+        });
+
         // Referral detection via start_param
         const startParam = tg.initDataUnsafe?.start_param;
         if (startParam?.startsWith('ref_')) {
@@ -127,6 +193,18 @@ export default function App() {
     }
   }, []);
 
+  const syncUserData = useCallback(() => {
+    const tid = localStorage.getItem('az_tg_id');
+    if (tid) saveUserData(tid, gatherLocalData());
+  }, []);
+
+  // Sync when user hides the app or closes tab
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === 'hidden') syncUserData(); };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, [syncUserData]);
+
   const handleTabChange = useCallback((tab) => {
     setActiveGame(null);
     setActiveLesson(null);
@@ -157,9 +235,10 @@ export default function App() {
       }
       setProgressVersion(v => v + 1);
       if (earnedScore > 0) addScore(earnedScore);
+      syncUserData();
     }
     setActiveLesson(null);
-  }, [activeLesson, addScore]);
+  }, [activeLesson, addScore, syncUserData]);
 
   const handleSettingsChange = useCallback((next) => {
     if (next.language) setLanguage(next.language);
@@ -173,6 +252,7 @@ export default function App() {
           onBack={() => setActiveGame(null)}
           onComplete={(correct) => {
             if (correct > 0) addScore(correct * 2);
+            syncUserData();
             setActiveGame(null);
           }}
         />
