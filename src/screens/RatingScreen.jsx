@@ -16,6 +16,7 @@ function displayName(u) {
 export default function RatingScreen({ userScore, userName, telegramId, userAvatar }) {
   const t = useT('rating');
   const [board, setBoard] = useState(null);
+  const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('day');
   const [topAllTime, setTopAllTime] = useState(null); // always the #1 of all time
@@ -42,8 +43,13 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
   const load = useCallback(async (p, forceRefresh = false) => {
     setLoading(true);
     setBoard(null);
+    setLoadError(false);
     const data = await fetchLeaderboard(p, forceRefresh);
-    setBoard(mapUsers(data));
+    if (data === null) {
+      setLoadError(true);
+    } else {
+      setBoard(mapUsers(data));
+    }
     setLoading(false);
     // Refresh all-time top-1 banner on every load
     fetchLeaderboard('all', forceRefresh).then(allData => {
@@ -119,7 +125,15 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         <div className="rating-loading">{t('loading')}</div>
       )}
 
-      {!loading && board !== null && board.length === 0 && (
+      {!loading && loadError && (
+        <div className="rating-empty">
+          <div className="rating-empty__icon">⚠️</div>
+          <div className="rating-empty__title">Ошибка загрузки</div>
+          <div className="rating-empty__sub">Проверь соединение и нажми 🔄</div>
+        </div>
+      )}
+
+      {!loading && !loadError && board !== null && board.length === 0 && (
         <div className="rating-empty">
           <div className="rating-empty__icon">📭</div>
           <div className="rating-empty__title">{t('no_data')}</div>
