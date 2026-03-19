@@ -245,7 +245,10 @@ export async function fetchLeaderboard(period = 'all', forceRefresh = false) {
     .order('score', { ascending: false })
     .limit(50);
 
-  if (error) { console.warn(`[api] fetchLeaderboard ${period}:`, error.message); return null; }
+  if (error) {
+    console.warn(`[api] fetchLeaderboard ${period}:`, error.message, error.code, error.details);
+    return { __error: error.message || 'DB error' };
+  }
   if (!scores || scores.length === 0) { cacheSet(key, []); return []; }
 
   // Fetch user display info

@@ -16,7 +16,7 @@ function displayName(u) {
 export default function RatingScreen({ userScore, userName, telegramId, userAvatar }) {
   const t = useT('rating');
   const [board, setBoard] = useState(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('day');
   const [topAllTime, setTopAllTime] = useState(null); // always the #1 of all time
@@ -43,10 +43,10 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
   const load = useCallback(async (p, forceRefresh = false) => {
     setLoading(true);
     setBoard(null);
-    setLoadError(false);
+    setLoadError(null);
     const data = await fetchLeaderboard(p, forceRefresh);
-    if (data === null) {
-      setLoadError(true);
+    if (data === null || data?.__error) {
+      setLoadError(data?.__error || 'Нет ответа от базы данных');
     } else {
       setBoard(mapUsers(data));
     }
@@ -129,7 +129,7 @@ export default function RatingScreen({ userScore, userName, telegramId, userAvat
         <div className="rating-empty">
           <div className="rating-empty__icon">⚠️</div>
           <div className="rating-empty__title">Ошибка загрузки</div>
-          <div className="rating-empty__sub">Проверь соединение и нажми 🔄</div>
+          <div className="rating-empty__sub">{loadError}</div>
         </div>
       )}
 
